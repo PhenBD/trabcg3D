@@ -9,7 +9,6 @@ class Enemy : public Character {
 
 private:
     GLfloat walkSpeed = 0.01;
-    int walkingDirection = RIGHT;
 
 public:
     Enemy(){}; // Default constructor
@@ -21,9 +20,7 @@ public:
         return this->x == other.x && this->y == other.y;
     }
 
-    void setWalkingDirection(int direction){
-        walkingDirection = direction;
-    };
+
     static void setShootTimer(int value){
         shootTimer = value;
     }
@@ -33,9 +30,6 @@ public:
 
     GLfloat getWalkSpeed(){
         return walkSpeed;
-    };
-    GLfloat getWalkingDirection(){
-        return walkingDirection;
     };
     static int getShootTimer() {
         return shootTimer;

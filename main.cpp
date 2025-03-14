@@ -20,6 +20,9 @@ std::mt19937 rng(std::time(nullptr));
 
 #define INC_KEY 1
 
+// Debug mode
+bool debug = false;
+
 // Font
 void * font = GLUT_BITMAP_9_BY_15;
 
@@ -114,11 +117,11 @@ void ReadSvg(const char* filename) {
             // Check the fill color
             // If it is green, it is the player
             if (strcmp(child->Attribute("fill"), "green") == 0) {
-                std::uniform_real_distribution<float> floatDistribution(0.0f, arena.getDepth());
+                std::uniform_real_distribution<float> floatDistribution(atof(r), arena.getDepth());
                 player = Player(atof(cx), atof(cy), floatDistribution(rng), atof(r));
             } // If it is red, it is an enemy
             else if (strcmp(child->Attribute("fill"), "red") == 0) {
-                std::uniform_real_distribution<float> floatDistribution(0.0f, arena.getDepth());
+                std::uniform_real_distribution<float> floatDistribution(atof(r), arena.getDepth());
                 Enemy enemy(atof(cx), atof(cy), floatDistribution(rng), atof(r));
                 enemies.push_back(enemy);
             }
@@ -140,16 +143,6 @@ void motionCallback(int x, int y) {
 
 // Mouse callback
 void mouseClick(int button, int state, int x, int y) {
-    // if (state == GLUT_DOWN) {
-    //     if (!player.isOnAir()) 
-    //     {
-    //         player.setJumping(true);
-    //     }
-    //     else if (state == GLUT_UP) 
-    //     {
-    //         player.setJumping(false);
-    //     }
-    // }
     if (button == GLUT_LEFT_BUTTON) {
         if (state == GLUT_DOWN) {
             if (!ended)
@@ -212,6 +205,10 @@ void keyPress(unsigned char key, int x, int y)
         case 'r':
         case 'R':
             keyStatus[(int)('r')] = 1; //Using keyStatus trick
+            break;
+        case 'g':
+        case 'G':
+            debug = !debug;
             break;
         case 27 :
              exit(0);
@@ -283,24 +280,38 @@ void checkCollisionPlayer() {
 
 void updatePlayer(GLdouble timeDiff) {
     // Treat keyPress
-    if(keyStatus[(int)('a')])
+    if(keyStatus[(int)('w')])
     {
-        player.moveX(-player.getWalkSpeed(), timeDiff);
+        player.moveX(player.getWalkSpeed() * sin(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
+        player.moveZ(player.getWalkSpeed() * cos(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
+        player.setDirection(UP);
+        player.setWalking(true);
+        checkCollisionPlayer();
+    }
+    else if(keyStatus[(int)('s')])
+    {
+        player.moveX(-player.getWalkSpeed() * sin(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
+        player.moveZ(-player.getWalkSpeed() * cos(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
+        player.setDirection(DOWN);
+        player.setWalking(true);
+        checkCollisionPlayer();
+    }
+    if(keyStatus[(int)('a')] && !player.isOnAir())
+    {
+        player.rotateXZ(0.2 * timeDiff);
         player.setDirection(LEFT);
         player.setWalking(true);
         checkCollisionPlayer();
     }
-    else if(keyStatus[(int)('d')])
+    else if(keyStatus[(int)('d')] && !player.isOnAir())
     {
-        player.moveX(player.getWalkSpeed(), timeDiff);
+        player.rotateXZ(-0.2 * timeDiff);
         player.setDirection(RIGHT);
         player.setWalking(true);
         checkCollisionPlayer();
     }
     else {
         player.setWalking(false);
-        player.moveX(0, timeDiff);
-        checkCollisionPlayer();
     }
 
     // Treat jumping
@@ -322,12 +333,12 @@ void updatePlayer(GLdouble timeDiff) {
     if (mouseX < 250 && player.getLookingDirection() == RIGHT) 
     {
         player.setLookingDirection(LEFT);
-        player.flipDirection();
+        // player.flipDirection();
     } 
     else if (mouseX > 250 && player.getLookingDirection() == LEFT)
     {
         player.setLookingDirection(RIGHT);
-        player.flipDirection();
+        // player.flipDirection();
     }
 
     // Move the arm of the player based on the mouse position
@@ -586,7 +597,11 @@ void idle(void)
     timeDiference = currentTime - previousTime; // Elapsed time from the previous frame.
     previousTime = currentTime; //Update previous time
 
-    if (keyStatus[(int)('r')]  && ended) {
+    /*if (debug) {
+        if (keyStatus[(int)('r')])
+            restart();
+    }
+    else */if (keyStatus[(int)('r')] && ended) {
         restart();
     }
 
@@ -626,15 +641,25 @@ void renderScene(void) {
 
     // Draw elements
     arena.draw();
+
     player.draw();
+    if (debug)
+        player.drawAxis();
+
     for (Obstacle obs : obstacles) {
         obs.draw();
+        if (debug)
+            obs.drawAxis();
     }
     for (Enemy enemy : enemies) {
         enemy.draw();
+        if (debug)
+            enemy.drawAxis();
     }
     for (Shoot shoot : shoots) {
         shoot.draw();
+        if (debug)
+            shoot.drawAxis();
     }
 
     // Draw texts

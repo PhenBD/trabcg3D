@@ -8,7 +8,7 @@
 #include <list>
 
 // Enum for directions of movement
-enum Direction {UP, DOWN, LEFT, RIGHT};
+enum Direction {UP, DOWN, LEFT, RIGHT, FRONT, BACK};
 
 class Character : public Object {
 
@@ -22,6 +22,7 @@ protected:
 
 private:
     int direction = RIGHT;
+    GLfloat walkingDirection = 90.0f;
     int lookingDirection = RIGHT;
     GLfloat walkSpeed = 0.04;
     bool walking = false;
@@ -41,6 +42,8 @@ public:
     void draw(GLfloat R, GLfloat G, GLfloat B);
     void moveX(GLfloat dx, GLdouble timeDiff);
     void moveY(GLfloat dy, GLdouble timeDiff);
+    void moveZ(GLfloat dz, GLdouble timeDiff);
+    void rotateXZ(GLfloat angle);
     int checkCollision(Object obj);
     int checkArenaCollision(Arena arena);
     void flipDirection();
@@ -58,6 +61,9 @@ public:
     void setWalking(bool walking){
         this->walking = walking;
     };
+    void setWalkingDirection(int direction){
+        walkingDirection = direction;
+    };
 
     int getDirection(){
         return direction;
@@ -73,6 +79,9 @@ public:
     };
     GLfloat getWalkSpeed(){
         return walkSpeed;
+    };
+    GLfloat getWalkingDirection(){
+        return walkingDirection;
     };
     bool isPlayer(){
         return player;

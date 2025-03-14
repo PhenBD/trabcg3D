@@ -99,6 +99,7 @@ void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
 void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
     glPushMatrix();
         glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
+        glRotatef(walkingDirection - 90, 0, 1, 0);
         drawCirc((0.15 * height), R, G, B);
         glTranslatef(0, (0.15 * height), 0);
         drawRect(0.3 * height, width, depth, R, G, B);
@@ -157,6 +158,17 @@ int Character::checkArenaCollision(Arena arena){
         setY(arena.getBottom() - getHeight());
         return DOWN;
     }
+    // Z axis
+    if (getFront() > arena.getFront())
+    {
+        setZ(arena.getFront() - getDepth());
+        return FRONT;
+    }
+    else if (getBack() < arena.getBack()) 
+    {
+        setZ(arena.getBack());
+        return BACK;
+    }
 
     return -1;
 }
@@ -206,6 +218,19 @@ void Character::moveX(GLfloat dx, GLdouble timeDiff) {
 
 void Character::moveY(GLfloat dy, GLdouble timeDiff) {
     setY(y + dy * timeDiff);
+}
+
+void Character::moveZ(GLfloat dz, GLdouble timeDiff) {
+    setZ(z + dz * timeDiff);
+}
+
+void Character::rotateXZ(GLfloat angle) {
+    walkingDirection += angle;
+
+    if (walkingDirection >= 360.0f)
+        walkingDirection -= 360.0f;
+    else if (walkingDirection < 0.0f)
+        walkingDirection += 360.0f;
 }
 
 void Character::shoot(std::list<Shoot> &shoots){

@@ -2,6 +2,7 @@
 #define	OBJECT_H
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <GL/glut.h>
 #include "utils.h"
 #include <iostream>
 
@@ -34,6 +35,8 @@ public:
     }
 
     Object(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GLfloat depth);
+
+    void drawAxis();
 
     void setX(GLfloat x);
     void setY(GLfloat y);

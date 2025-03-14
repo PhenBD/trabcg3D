@@ -15,6 +15,46 @@ Object::Object(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, G
     front = z + depth;
 };
 
+void Object::drawAxis(){
+    GLfloat color_r[] = { 1.0, 0.0, 0.0, 1.0 };
+    GLfloat color_g[] = { 0.0, 1.0, 0.0, 1.0 };
+    GLfloat color_b[] = { 0.0, 0.0, 1.0, 1.0 };
+
+    glPushMatrix();
+        glPushAttrib(GL_ENABLE_BIT);
+            glDisable(GL_LIGHTING);
+            glDisable(GL_TEXTURE_2D);
+
+            glTranslatef(x, y, z);
+            //x axis - Vermelho
+            glPushMatrix();
+                glColor3fv(color_r);
+                glScalef(3, 0.3, 0.3);
+                glTranslatef(0.5, 0, 0); // put in one end
+                glutSolidCube(1.0);
+            glPopMatrix();
+
+            //y axis - Verde
+            glPushMatrix();
+                glColor3fv(color_g);
+                glRotatef(90,0,0,1);
+                glScalef(3, 0.3, 0.3);
+                glTranslatef(0.5, 0, 0); // put in one end
+                glutSolidCube(1.0);
+            glPopMatrix();
+
+            //z axis - Azul
+            glPushMatrix();
+                glColor3fv(color_b);
+                glRotatef(-90,0,1,0);
+                glScalef(3, 0.3, 0.3);
+                glTranslatef(0.5, 0, 0); // put in one end
+                glutSolidCube(1.0);
+            glPopMatrix();
+        glPopAttrib();
+    glPopMatrix();
+};
+
 void Object::setX(GLfloat x){
     this->x = x;
     right = x + width;
