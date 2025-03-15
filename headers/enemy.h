@@ -12,7 +12,7 @@ private:
     int walkTimer = 0;
     int maxWalkTimer = 1500;
     int idleTimer = 0;
-    int maxIdleTimer = 7000;
+    int maxIdleTimer = 10000;
     int nextDirectionAngle = 0;
 
 public:

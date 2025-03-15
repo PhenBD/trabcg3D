@@ -454,24 +454,18 @@ void updateEnemies(GLdouble timeDiff) {
         checkCollisonEnemy(enemy);
 
         // Move the enemy
-        if (enemy.getWalkTimer() >= enemy.getMaxWalkTimer() && enemy.getIdleTimer() >= enemy.getMaxIdleTimer() && enemy.getDirectionAngle() == enemy.getNextDirectionAngle()) {
+        if (enemy.getWalkTimer() >= enemy.getMaxWalkTimer() && enemy.getIdleTimer() >= enemy.getMaxIdleTimer()) {
             std::uniform_int_distribution<int> angleDistribution(0, 359);
             enemy.setNextDirectionAngle(angleDistribution(rng));
             enemy.resetWalkTimer();
             enemy.resetIdleTimer();
         }
 
-        std::cout << "walkTimer: " << enemy.getWalkTimer() << std::endl;
-        std::cout << "idleTimer: " << enemy.getIdleTimer() << std::endl;
-        if (enemy.getX() < -100){
-            std::cout << "directionAngle: " << enemy.getDirectionAngle() << std::endl;
-            std::cout << "nextDirectionAngle: " << enemy.getNextDirectionAngle() << std::endl;
+        if (enemy.getDirectionAngle() < enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
+            enemy.rotateXZ(1);
         }
-        if (enemy.getDirectionAngle() < enemy.getNextDirectionAngle()) {
-            enemy.rotateXZ(1 * timeDiff);
-        }
-        else if (enemy.getDirectionAngle() > enemy.getNextDirectionAngle()) {
-            enemy.rotateXZ(-1 * timeDiff);
+        else if (enemy.getDirectionAngle() > enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
+            enemy.rotateXZ(-1);
         }
         else if (enemy.getDirectionAngle() == enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
             enemy.addWalkTimer(timeDiff);
@@ -480,18 +474,44 @@ void updateEnemies(GLdouble timeDiff) {
         if (enemy.getDirectionAngle() == enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
             enemy.moveX(enemy.getWalkSpeed() * sin(enemy.getDirectionAngle() * M_PI / 180.0f), timeDiff);
             enemy.moveZ(enemy.getWalkSpeed() * cos(enemy.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+            checkCollisonEnemy(enemy);
         }
 
+        // Rotate the direction of the enemy based on the player position
         if (enemy.getWalkTimer() >= enemy.getMaxWalkTimer()){
             enemy.addIdleTimer(timeDiff);
+
+            float enemyX = enemy.getX() + enemy.getWidth()/2;
+            float enemyZ = enemy.getZ() + enemy.getDepth()/2;
+            
+            float playerX = player.getX() + player.getWidth()/2;
+            float playerZ = player.getZ() + player.getDepth()/2;
+            
+            // Calculate vector from enemy to player
+            float dx = playerX - enemyX;
+            float dz = playerZ - enemyZ;
+
+            int targetAngle = floor(atan2(dx, dz) * 180.0f / M_PI);
+
+            if (targetAngle < 0)
+                targetAngle += 360.0f;
+
+            if (enemy.getDirectionAngle() < targetAngle) {
+                enemy.rotateXZ(1);
+            }
+            else if (enemy.getDirectionAngle() > targetAngle) {
+                enemy.rotateXZ(-1);
+            }
         }
-
-        checkCollisonEnemy(enemy);
-
-        // Flip the looking direction of the enemy based on the player position
-
         // Move the arm of the enemy based on the player position
-
+        int signal;
+        if (enemy.getLookingDirection() == LEFT)
+            signal = 1;
+        else if (enemy.getLookingDirection() == RIGHT)
+            signal = -1;
+        
+        enemy.setThetaArm(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
+        
         // Shoot periodically
         // if (Enemy::getShootTimer() >= 3000) {
         //     enemy.shoot(shoots);
