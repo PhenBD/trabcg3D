@@ -230,9 +230,15 @@ void keyPress(unsigned char key, int x, int y)
     {
         case '1':
             camera = 1;
+            changeCamera(90, 
+                glutGet(GLUT_WINDOW_WIDTH), 
+                glutGet(GLUT_WINDOW_HEIGHT));
             break;
         case '2':
             camera = 2;
+            changeCamera(90, 
+                glutGet(GLUT_WINDOW_WIDTH), 
+                glutGet(GLUT_WINDOW_HEIGHT));
             break;
         case '3':
             camera = 3;
@@ -274,6 +280,8 @@ void keyPress(unsigned char key, int x, int y)
             break;
         case '-':
         {
+            if (camera != 3)
+                break;
             int inc = camAngle >= 180 ? 0 : 1;
             camAngle += inc;
             changeCamera(camAngle, 
@@ -283,6 +291,8 @@ void keyPress(unsigned char key, int x, int y)
         }
         case '+':
         {
+            if (camera != 3)
+                break;
             int inc = camAngle <= 5 ? 0 : 1;
             camAngle -= inc;
             changeCamera(camAngle, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
