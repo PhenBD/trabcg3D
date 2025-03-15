@@ -3,6 +3,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "object.h"
+#include "obstacle.h"
 #include "arena.h"
 #include "shoot.h"
 #include <list>
@@ -22,7 +23,7 @@ protected:
 
 private:
     int direction = RIGHT;
-    GLfloat walkingDirection = 90.0f;
+    GLfloat directionAngle = 90.0f;
     int lookingDirection = RIGHT;
     GLfloat walkSpeed = 0.04;
     bool walking = false;
@@ -36,7 +37,7 @@ private:
 
 public:
     Character(){}; // Default constructor
-    Character(GLfloat x, GLfloat y, GLfloat z, GLfloat r, bool player) : Object(x - r, y - r, z, r/2, 2*r, r) {
+    Character(GLfloat x, GLfloat y, GLfloat z, GLfloat r, bool player) : Object(x - r, y - r, z, r/2, 2*r, r/2) {
         this->player = player;
     };
     void draw(GLfloat R, GLfloat G, GLfloat B);
@@ -44,10 +45,12 @@ public:
     void moveY(GLfloat dy, GLdouble timeDiff);
     void moveZ(GLfloat dz, GLdouble timeDiff);
     void rotateXZ(GLfloat angle);
-    int checkCollision(Object obj);
-    int checkArenaCollision(Arena arena);
+    int checkCollisionObstacle(Obstacle obs);
+    int checkCollisionArena(Arena arena);
+    int checkCollisionCharacter(Character other);
     void flipDirection();
     void shoot(std::list<Shoot> &shoots);
+    void drawCollisonBox();
 
     void setDirection(int direction){
         this->direction = direction;
@@ -61,8 +64,8 @@ public:
     void setWalking(bool walking){
         this->walking = walking;
     };
-    void setWalkingDirection(int direction){
-        walkingDirection = direction;
+    void setDirectionAngle(int direction){
+        directionAngle = direction;
     };
 
     int getDirection(){
@@ -80,8 +83,8 @@ public:
     GLfloat getWalkSpeed(){
         return walkSpeed;
     };
-    GLfloat getWalkingDirection(){
-        return walkingDirection;
+    GLfloat getDirectionAngle(){
+        return directionAngle;
     };
     bool isPlayer(){
         return player;

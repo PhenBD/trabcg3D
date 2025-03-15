@@ -20,6 +20,13 @@ std::mt19937 rng(std::time(nullptr));
 
 #define INC_KEY 1
 
+// Camera
+int camera = 3;
+double camXYAngle=0;
+double camXZAngle=0;
+int camAngle = 60;
+bool freeCam = false;
+
 // Debug mode
 bool debug = false;
 
@@ -40,6 +47,8 @@ int keyStatus[256];
 // Mouse position
 GLint mouseX = 0.0;
 GLint mouseY = 0.0;
+int lastMouseX = 0;
+int lastMouseY = 0;
 
 // Window dimensions
 const GLint Width = 500;
@@ -131,8 +140,17 @@ void ReadSvg(const char* filename) {
 
 // Mouse passive position callback
 void passiveMotionCallback(int x, int y) {
-    mouseX = x;
-    mouseY = y;
+    camXZAngle += x - lastMouseX;
+    camXYAngle += y - lastMouseY;
+    
+    camXZAngle = (int)camXZAngle % 360;
+    if (camXYAngle > 60)
+        camXYAngle = 60;
+    else if (camXYAngle < -60)
+        camXYAngle = -60;
+    
+    lastMouseX = x;
+    lastMouseY = y;
 }
 
 // Mouse motion when clicked callback
@@ -181,6 +199,15 @@ void keyPress(unsigned char key, int x, int y)
 {
     switch (key)
     {
+        case '1':
+            camera = 1;
+            break;
+        case '2':
+            camera = 2;
+            break;
+        case '3':
+            camera = 3;
+            break;
         case ' ': // Tecla de espaço
             if (!player.isOnAir()) {
                 player.setJumping(true);
@@ -209,6 +236,12 @@ void keyPress(unsigned char key, int x, int y)
         case 'g':
         case 'G':
             debug = !debug;
+            break;
+        case 'x':
+        case 'X':
+            freeCam = !freeCam;
+            camXZAngle = player.getDirectionAngle();
+            camXYAngle = 0;
             break;
         case 27 :
              exit(0);
@@ -241,7 +274,7 @@ void checkCollisionPlayer() {
 
     // Check collision with the arena
     // The function returns the direction that the player collided with the arena
-    int collisonDirection = player.checkArenaCollision(arena);
+    int collisonDirection = player.checkCollisionArena(arena);
     if (collisonDirection == DOWN)
         landedOnArena = true;
     else if (collisonDirection == RIGHT){
@@ -252,21 +285,17 @@ void checkCollisionPlayer() {
     // Check collision with obstacles
     for (Obstacle obs : obstacles) {
         // The function returns the direction that the player collided with the object
-        if (player.checkCollision(obs) == DOWN)
+        if (player.checkCollisionObstacle(obs) == DOWN)
             landedOnObstacle = true;
     }
 
     // Check collision with enemies
     for (Enemy enemy : enemies) {
         // The function returns the direction that the player collided with the object
-        if (player.checkCollision(enemy) == DOWN)
+        if (player.checkCollisionCharacter(enemy) == DOWN)
             landedOnEnemy = true;
     }
 
-    // std::cout << "landedOnArena: " << landedOnArena << std::endl;
-    // std::cout << "landedOnObstacle: " << landedOnObstacle << std::endl;
-    // std::cout << "landedOnEnemy: " << landedOnEnemy << std::endl;
-    // std::cout << "On air: " << player.isOnAir() << std::endl;
     // If the player landed on anything, it is not on air
     if (landedOnArena || landedOnObstacle || landedOnEnemy) {
         player.setOnAir(false);
@@ -282,38 +311,46 @@ void updatePlayer(GLdouble timeDiff) {
     // Treat keyPress
     if(keyStatus[(int)('w')])
     {
-        player.moveX(player.getWalkSpeed() * sin(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
-        player.moveZ(player.getWalkSpeed() * cos(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
-        player.setDirection(UP);
+        player.moveX(player.getWalkSpeed() * sin(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+        player.moveZ(player.getWalkSpeed() * cos(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+
+        if (sin(player.getDirectionAngle() * M_PI / 180.0f) > 0){
+            player.setDirection(RIGHT);
+        }
+        else if (sin(player.getDirectionAngle() * M_PI / 180.0f) < 0){
+            player.setDirection(LEFT);
+        }
+
         player.setWalking(true);
         checkCollisionPlayer();
     }
     else if(keyStatus[(int)('s')])
     {
-        player.moveX(-player.getWalkSpeed() * sin(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
-        player.moveZ(-player.getWalkSpeed() * cos(player.getWalkingDirection() * M_PI / 180.0f), timeDiff);
-        player.setDirection(DOWN);
+        player.moveX(-player.getWalkSpeed() * sin(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+        player.moveZ(-player.getWalkSpeed() * cos(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+
+        if (sin(player.getDirectionAngle() * M_PI / 180.0f) > 0){
+            player.setDirection(LEFT);
+        }
+        else if (sin(player.getDirectionAngle() * M_PI / 180.0f) < 0){
+            player.setDirection(RIGHT);
+        }
+
         player.setWalking(true);
         checkCollisionPlayer();
     }
     if(keyStatus[(int)('a')] && !player.isOnAir())
     {
-        player.rotateXZ(0.2 * timeDiff);
-        player.setDirection(LEFT);
-        player.setWalking(true);
-        checkCollisionPlayer();
+        player.rotateXZ(-0.2 * timeDiff);
     }
     else if(keyStatus[(int)('d')] && !player.isOnAir())
     {
-        player.rotateXZ(-0.2 * timeDiff);
-        player.setDirection(RIGHT);
-        player.setWalking(true);
-        checkCollisionPlayer();
+        player.rotateXZ(0.2 * timeDiff);
     }
     else {
         player.setWalking(false);
     }
-
+    
     // Treat jumping
     if (player.getJumpingTime() <= 1000 && player.isJumping()) 
     {
@@ -323,21 +360,28 @@ void updatePlayer(GLdouble timeDiff) {
         player.setDirection(UP);
         checkCollisionPlayer();
     }
+    else
+    {
+        player.setJumping(false);
+        player.setJumpingTime(0);
+    }
     
     // Gravity
-    player.moveY((player.getJumpSpeed()/2), timeDiff);
-    player.setDirection(DOWN);
-    checkCollisionPlayer();
+    if (!player.isJumping()){
+        player.moveY((player.getJumpSpeed()), timeDiff);
+        player.setDirection(DOWN);
+        checkCollisionPlayer();
+    }
 
     // Flip the direction of the player based on the mouse position
     if (mouseX < 250 && player.getLookingDirection() == RIGHT) 
     {
-        player.setLookingDirection(LEFT);
+        // player.setLookingDirection(LEFT);
         // player.flipDirection();
     } 
     else if (mouseX > 250 && player.getLookingDirection() == LEFT)
     {
-        player.setLookingDirection(RIGHT);
+        // player.setLookingDirection(RIGHT);
         // player.flipDirection();
     }
 
@@ -367,37 +411,37 @@ void checkCollisonEnemy(Enemy &enemy) {
         int collisonDirectionPlayer = -1;
 
         // Check collision with the arena
-        collisonDirection = enemy.checkArenaCollision(arena);
+        collisonDirection = enemy.checkCollisionArena(arena);
         if (collisonDirection != -1)
             collisonDirectionArena = collisonDirection;
 
-        // Check collision with obstacles
-        for (Obstacle obs : obstacles) {
-            collisonDirection = enemy.checkCollision(obs);
-            if (collisonDirection != -1)
-                collisonDirectionObstacle = collisonDirection;
+        // // Check collision with obstacles
+        // for (Obstacle obs : obstacles) {
+        //     collisonDirection = enemy.checkCollisionObstacle(obs);
+        //     if (collisonDirection != -1)
+        //         collisonDirectionObstacle = collisonDirection;
             
-            // Make the enemy stay on the platform
-            if (collisonDirection == DOWN){
-                if (enemy.getLeft() < obs.getLeft()){
-                    enemy.setWalkingDirection(RIGHT);
-                }   
-                else if (enemy.getRight() > obs.getRight()){
-                    enemy.setWalkingDirection(LEFT);
-                }
-            }
-        }
+        //     // Make the enemy stay on the platform
+        //     if (collisonDirection == DOWN){
+        //         if (enemy.getLeft() < obs.getLeft()){
+        //             enemy.setDirectionAngle(RIGHT);
+        //         }   
+        //         else if (enemy.getRight() > obs.getRight()){
+        //             enemy.setDirectionAngle(LEFT);
+        //         }
+        //     }
+        // }
 
-        // Check collision with the player
-        enemy.checkCollision(player);
+        // // Check collision with the player
+        // enemy.checkCollisionCharacter(player);
 
-        // Flip the direction of the enemy based on the collision direction
-        if (collisonDirectionArena == LEFT || collisonDirectionObstacle == LEFT) {
-            enemy.setWalkingDirection(RIGHT);
-        }
-        else if (collisonDirectionArena == RIGHT || collisonDirectionObstacle == RIGHT) {
-            enemy.setWalkingDirection(LEFT);
-        }
+        // // Flip the direction of the enemy based on the collision direction
+        // if (collisonDirectionArena == LEFT || collisonDirectionObstacle == LEFT) {
+        //     enemy.setDirectionAngle(RIGHT);
+        // }
+        // else if (collisonDirectionArena == RIGHT || collisonDirectionObstacle == RIGHT) {
+        //     enemy.setDirectionAngle(LEFT);
+        // }
 }
 
 void updateEnemies(GLdouble timeDiff) {
@@ -405,46 +449,53 @@ void updateEnemies(GLdouble timeDiff) {
 
     for (Enemy &enemy : enemies) {
         // Gravity
-        enemy.moveY((player.getJumpSpeed()/2), timeDiff);
+        enemy.moveY((player.getJumpSpeed()), timeDiff);
         enemy.setDirection(DOWN);
         checkCollisonEnemy(enemy);
 
         // Move the enemy
-        if (enemy.getWalkingDirection() == LEFT){
-            enemy.moveX(-enemy.getWalkSpeed(), timeDiff);
-            enemy.setWalking(true);
-            enemy.setDirection(LEFT);
+        if (enemy.getWalkTimer() >= enemy.getMaxWalkTimer() && enemy.getIdleTimer() >= enemy.getMaxIdleTimer() && enemy.getDirectionAngle() == enemy.getNextDirectionAngle()) {
+            std::uniform_int_distribution<int> angleDistribution(0, 359);
+            enemy.setNextDirectionAngle(angleDistribution(rng));
+            enemy.resetWalkTimer();
+            enemy.resetIdleTimer();
         }
-        else if (enemy.getWalkingDirection() == RIGHT){
-            enemy.moveX(enemy.getWalkSpeed(), timeDiff);
-            enemy.setWalking(true);
-            enemy.setDirection(RIGHT);
+
+        std::cout << "walkTimer: " << enemy.getWalkTimer() << std::endl;
+        std::cout << "idleTimer: " << enemy.getIdleTimer() << std::endl;
+        if (enemy.getX() < -100){
+            std::cout << "directionAngle: " << enemy.getDirectionAngle() << std::endl;
+            std::cout << "nextDirectionAngle: " << enemy.getNextDirectionAngle() << std::endl;
         }
+        if (enemy.getDirectionAngle() < enemy.getNextDirectionAngle()) {
+            enemy.rotateXZ(1 * timeDiff);
+        }
+        else if (enemy.getDirectionAngle() > enemy.getNextDirectionAngle()) {
+            enemy.rotateXZ(-1 * timeDiff);
+        }
+        else if (enemy.getDirectionAngle() == enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
+            enemy.addWalkTimer(timeDiff);
+        }
+        
+        if (enemy.getDirectionAngle() == enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
+            enemy.moveX(enemy.getWalkSpeed() * sin(enemy.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+            enemy.moveZ(enemy.getWalkSpeed() * cos(enemy.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+        }
+
+        if (enemy.getWalkTimer() >= enemy.getMaxWalkTimer()){
+            enemy.addIdleTimer(timeDiff);
+        }
+
         checkCollisonEnemy(enemy);
 
         // Flip the looking direction of the enemy based on the player position
-        if (player.getX() < enemy.getX() && enemy.getLookingDirection() == RIGHT) {
-            enemy.flipDirection();
-            enemy.setLookingDirection(LEFT);
-        } 
-        else if (player.getX() > enemy.getX() && enemy.getLookingDirection() == LEFT) {
-            enemy.flipDirection();
-            enemy.setLookingDirection(RIGHT);
-        }
 
         // Move the arm of the enemy based on the player position
-        int signal;
-        if (enemy.getLookingDirection() == LEFT)
-            signal = 1;
-        else if (enemy.getLookingDirection() == RIGHT)
-            signal = -1;
-        
-        enemy.setThetaArm(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
-        
+
         // Shoot periodically
-        if (Enemy::getShootTimer() >= 3000) {
-            enemy.shoot(shoots);
-        }
+        // if (Enemy::getShootTimer() >= 3000) {
+        //     enemy.shoot(shoots);
+        // }
     }
 
     if (Enemy::getShootTimer() >= 3000) {
@@ -456,7 +507,7 @@ void updateShoots(GLdouble timeDiff) {
     for (auto it = shoots.begin(); it != shoots.end(); ) {
         it->move(timeDiff);
 
-        if (it->checkArenaCollision(arena)) {
+        if (it->checkCollisionArena(arena)) {
             it = shoots.erase(it); // Use erase to remove the element and get the next iterator
             continue;
         }
@@ -500,55 +551,7 @@ void restart() {
     shoots.clear();
     ReadSvg(arenaSVGFilename);
 }
-// ver dps
-void rasterChars(GLfloat x, GLfloat y, GLfloat z, const char * text, double r, double g, double b)
-{
-    //Push to recover original attributes
-    glPushAttrib(GL_ENABLE_BIT);
-        glDisable(GL_LIGHTING);
-        glDisable(GL_TEXTURE_2D);
-        //Draw text in the x, y, z position
-        glColor3f(r,g,b);
-        glRasterPos3f(x, y, z);
-        const char* tmpStr;
-        tmpStr = text;
-        while( *tmpStr ){
-            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *tmpStr);
-            tmpStr++;
-        }
-    glPopAttrib();
-}
-void printText(GLfloat x, GLfloat y, const char * text, double r, double g, double b)
-{
-    GLint matrixMode;
-    glGetIntegerv(GL_MATRIX_MODE, &matrixMode); // Save the current matrix mode
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix(); // Save the current projection matrix
-        glLoadIdentity();
-        glOrtho(0, Width, Height, 0, -1, 1);
-
-        // glMatrixMode(GL_MODELVIEW);
-        // glPushMatrix(); // Save the current model-view matrix
-            // glLoadIdentity();
-            GLfloat w = 0;
-            const char* textAux = text;
-            while (*textAux) {
-                w += glutBitmapWidth(font, *textAux);
-                textAux++;
-            }
-
-            //Define a posicao onde vai comecar a imprimir
-            int xw = x - w/2;
-
-            rasterChars(xw, y, 0, text, r, g, b);   
-
-        // glPopMatrix(); // Restore the previous model-view matrix
-        // glMatrixMode(GL_PROJECTION);
-    glPopMatrix(); // Restore the previous projection matrix
-    glMatrixMode(matrixMode); // Restore the previous matrix mode
-}
-//
 void drawText(GLfloat x, GLfloat y, const char* text, GLfloat r, GLfloat g, GLfloat b) {
     GLint matrixMode;
     glGetIntegerv(GL_MATRIX_MODE, &matrixMode); // Save the current matrix mode
@@ -586,6 +589,81 @@ void drawText(GLfloat x, GLfloat y, const char* text, GLfloat r, GLfloat g, GLfl
     glMatrixMode(matrixMode); // Restore the previous matrix mode
 }
 
+// Função auxiliar para verificar se um ponto está dentro de um obstáculo
+bool isPointInsideObstacle(float x, float y, float z, Obstacle obs) {
+    return (x >= obs.getLeft() && x <= obs.getRight() && 
+            y >= obs.getY() && y <= obs.getY() + obs.getHeight() && 
+            z >= obs.getBack() && z <= obs.getFront());
+}
+
+// Função auxiliar para verificar se um ponto está fora da arena
+bool isPointOutsideArena(float x, float y, float z, Arena arena) {
+    return (x < arena.getLeft() || x > arena.getRight() || 
+            y < arena.getTop() || y > arena.getBottom() || 
+            z < arena.getBack() || z > arena.getFront());
+}
+
+// Função para realizar o ray casting entre jogador e câmera
+bool checkCameraCollision(float playerX, float playerY, float playerZ, 
+                         float cameraX, float cameraY, float cameraZ, 
+                         float& newCameraX, float& newCameraY, float& newCameraZ) {
+    // Direção do ray
+    float dirX = cameraX - playerX;
+    float dirY = cameraY - playerY;
+    float dirZ = cameraZ - playerZ;
+    
+    // Comprimento do ray (distância entre jogador e câmera)
+    float rayLength = sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ);
+    
+    // Normalizar o vetor direção
+    if (rayLength > 0) {
+        dirX /= rayLength;
+        dirY /= rayLength;
+        dirZ /= rayLength;
+    }
+    
+    // Número de passos para checar (quanto maior, mais preciso mas mais custoso)
+    const int numSteps = 100;
+    float stepSize = rayLength / numSteps;
+    
+    // Iniciar com a câmera na posição pretendida
+    newCameraX = cameraX;
+    newCameraY = cameraY;
+    newCameraZ = cameraZ;
+    
+    // Verificar do jogador para a câmera
+    for (int i = 1; i <= numSteps; i++) {
+        float t = i * stepSize;
+        float pointX = playerX + dirX * t;
+        float pointY = playerY + dirY * t;
+        float pointZ = playerZ + dirZ * t;
+        
+        // Verificar se o ponto está fora da arena
+        if (isPointOutsideArena(pointX, pointY, pointZ, arena)) {
+            // Recuar um pouco para garantir que ficamos dentro da arena
+            float safeT = (i - 5) * stepSize;
+            newCameraX = playerX + dirX * safeT;
+            newCameraY = playerY + dirY * safeT;
+            newCameraZ = playerZ + dirZ * safeT;
+            return true;
+        }
+        
+        // Verificar colisão com obstáculos
+        for (Obstacle obs : obstacles) {
+            if (isPointInsideObstacle(pointX, pointY, pointZ, obs)) {
+                // Recuar um pouco para garantir que não ficamos dentro do obstáculo
+                float safeT = (i - 5) * stepSize;
+                newCameraX = playerX + dirX * safeT;
+                newCameraY = playerY + dirY * safeT;
+                newCameraZ = playerZ + dirZ * safeT;
+                return true;
+            }
+        }
+    }
+    
+    return false; // Não houve colisão
+}
+
 void idle(void)
 {
     static GLdouble previousTime = 0;
@@ -607,7 +685,7 @@ void idle(void)
 
     if (!ended){
         updatePlayer(timeDiference);
-        if (enemies.size() > 0)
+        if (enemies.size() > 0 && !debug)
             updateEnemies(timeDiference);
         if (shoots.size() > 0)
             updateShoots(timeDiference);
@@ -623,18 +701,64 @@ void renderScene(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    // Configure the camera
-    GLfloat eyeX = player.getX();
-    GLfloat eyeY = arena.getY() + arena.getHeight()/2;
-    GLfloat eyeZ = arena.getZ() + arena.getDepth()/2;
+    // Configure a câmera com base no valor de camera
+    GLfloat eyeX, eyeY, eyeZ;           // Posição da câmera
+    GLfloat centerX, centerY, centerZ;  // Ponto para onde a câmera olha
+    GLfloat upX, upY, upZ;              // Vetor "up" da câmera
+    
+    // Ponto para onde a câmera olha (geralmente o jogador)
+    centerX = player.getX() + player.getWidth()/2;
+    centerY = player.getY() + player.getHeight()/2;
+    centerZ = player.getZ() + player.getDepth()/2;
+    
+    // Vetor up padrão
+    upX = 0.0f;
+    upY = -1.0f;
+    upZ = 0.0f;
 
-    GLfloat centerX = player.getX();
-    GLfloat centerY = player.getY();
-    GLfloat centerZ = player.getZ(); 
-
-    GLfloat upX = 0.0f;
-    GLfloat upY = -1.0f;
-    GLfloat upZ = 0.0f;
+    switch (camera) {
+        case 1: 
+            // Câmera isométrica (vista de cima e um pouco de lado)
+            eyeX = player.getX() + 20.0f;
+            eyeY = player.getY() + 30.0f;
+            eyeZ = player.getZ() + 20.0f;
+            break;
+        case 2: 
+            // Câmera de topo (visão aérea)
+            eyeX = player.getX() + player.getWidth()/2;
+            eyeY = player.getY() + 40.0f;
+            eyeZ = player.getZ() + player.getDepth()/2;
+            break;
+        case 3:
+            // Câmera em terceira pessoa (atrás do jogador)
+            float angle, heightAbove;
+            if (freeCam){
+                angle = camXZAngle * M_PI / 180.0f;
+                heightAbove = (-player.getHeight() * 2) + ((player.getHeight() * 2) * (camXYAngle * M_PI / 180.0f));  
+            }
+            else {
+                angle = player.getDirectionAngle() * M_PI / 180.0f;
+                heightAbove = -player.getHeight() * 2;     // Altura acima do jogador
+            }
+            float distanceBehind = player.getHeight() * 3; // Distância atrás do jogador
+            
+            
+            // Posição ideal da câmera (antes da verificação de colisão)
+            eyeX = centerX - distanceBehind * sin(angle);
+            eyeY = centerY + heightAbove;
+            eyeZ = centerZ - distanceBehind * cos(angle);
+            
+            // Verificar colisão da câmera e ajustar se necessário
+            float newEyeX, newEyeY, newEyeZ;
+            if (checkCameraCollision(centerX, centerY, centerZ, eyeX, eyeY, eyeZ, 
+                                    newEyeX, newEyeY, newEyeZ)) {
+                eyeX = newEyeX;
+                eyeY = newEyeY;
+                eyeZ = newEyeZ;
+            }
+            
+            break;
+    }
 
     glLoadIdentity();
     gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
@@ -643,8 +767,10 @@ void renderScene(void) {
     arena.draw();
 
     player.draw();
-    if (debug)
+    if (debug){
         player.drawAxis();
+        player.drawCollisonBox();
+    }
 
     for (Obstacle obs : obstacles) {
         obs.draw();
@@ -653,8 +779,10 @@ void renderScene(void) {
     }
     for (Enemy enemy : enemies) {
         enemy.draw();
-        if (debug)
+        if (debug){
             enemy.drawAxis();
+            enemy.drawCollisonBox();
+        }
     }
     for (Shoot shoot : shoots) {
         shoot.draw();

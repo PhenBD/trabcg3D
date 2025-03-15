@@ -16,7 +16,7 @@ private:
 public:
     Player(){}; // Default constructor
     Player(GLfloat x, GLfloat y, GLfloat z, GLfloat r) : Character(x, y, z, r, true) {
-        jumpSpeed = ((height * 3) / 1000) * 2;
+        jumpSpeed = ((height * 3) / 1000);
     };
     void draw(){
         Character::draw(0.0, 1.0, 0.0);

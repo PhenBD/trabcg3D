@@ -45,7 +45,7 @@ bool Shoot::checkCollision(Object obj) {
     return false;
 }
 
-bool Shoot::checkArenaCollision(Arena arena){
+bool Shoot::checkCollisionArena(Arena arena){
     if (getLeft() < arena.getLeft() || getRight() > arena.getRight() ||
         getTop() < arena.getTop() || getBottom() > arena.getBottom()) {
         return true;

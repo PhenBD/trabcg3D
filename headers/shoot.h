@@ -27,7 +27,7 @@ public:
     void draw();
     void move(GLdouble timeDiff);
     bool checkCollision(Object obj);
-    bool checkArenaCollision(Arena arena);
+    bool checkCollisionArena(Arena arena);
     bool operator==(const Shoot& other) const {
         return this->x == other.x && this->y == other.y;
     }

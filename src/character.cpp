@@ -1,4 +1,5 @@
 #include "../headers/character.h"
+#include <algorithm>
 
 void Character::drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B)
 {
@@ -99,7 +100,7 @@ void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
 void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
     glPushMatrix();
         glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
-        glRotatef(walkingDirection - 90, 0, 1, 0);
+        glRotatef(directionAngle - 90, 0, 1, 0);
         drawCirc((0.15 * height), R, G, B);
         glTranslatef(0, (0.15 * height), 0);
         drawRect(0.3 * height, width, depth, R, G, B);
@@ -108,24 +109,23 @@ void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
     glPopMatrix();
 }
 
-int Character::checkCollision(Object obj) {
-    // Check collision on X and Y axes
-    if (getRight() > obj.getLeft() && getLeft() < obj.getRight() &&
-        getBottom() > obj.getTop() && getTop() < obj.getBottom()) {
-        
+int Character::checkCollisionObstacle(Obstacle obs) {
+    if (getRight() > obs.getLeft() && getLeft() < obs.getRight() &&
+        getBottom() > obs.getTop() && getTop() < obs.getBottom()) {
+
         // Handle collision based on Character's direction
         switch (getDirection()) {
             case RIGHT:
-                setX(obj.getLeft() - getWidth());
+                setX(obs.getLeft() - getWidth());
                 return RIGHT;
             case LEFT:
-                setX(obj.getRight());
+                setX(obs.getRight());
                 return LEFT;
             case UP:
-                setY(obj.getBottom());
+                setY(obs.getBottom());
                 return UP;
             case DOWN:
-                setY(obj.getTop() - getHeight());
+                setY(obs.getTop() - getHeight());
                 return DOWN;
             default:
                 break;
@@ -135,39 +135,86 @@ int Character::checkCollision(Object obj) {
     return -1;
 }
 
-int Character::checkArenaCollision(Arena arena){
+int Character::checkCollisionArena(Arena arena){
     // X axis
     if (getLeft() < arena.getLeft())
     {
         setX(arena.getLeft());
-        return LEFT;
     }
     else if (getRight() > arena.getRight()) 
     {
         setX(arena.getRight() - getWidth());
         return RIGHT;
     }
+    // Z axis
+    if (getFront() > arena.getFront())
+    {
+        setZ(arena.getFront() - getDepth());
+    }
+    else if (getBack() < arena.getBack()) 
+    {
+        setZ(arena.getBack());
+    }
     // Y axis
     if (getTop() < arena.getTop())
     {
         setY(arena.getTop());
-        return UP;
     }
     else if (getBottom() > arena.getBottom()) 
     {
         setY(arena.getBottom() - getHeight());
         return DOWN;
     }
-    // Z axis
-    if (getFront() > arena.getFront())
-    {
-        setZ(arena.getFront() - getDepth());
-        return FRONT;
+
+    return -1;
+}
+
+int Character::checkCollisionCharacter(Character other) {
+    // Calculate cylinder centers
+    float xp = x + width/2;
+    float zp = z + depth/2;
+    
+    float xo = other.getX() + other.getWidth()/2;
+    float zo = other.getZ() + other.getDepth()/2;
+    
+    // Calculate vector between centers (in XZ plane for cylinder collision)
+    float dx = xo - xp;
+    float dz = zo - zp;
+    
+    // Calculate distance between centers
+    float distance = sqrt(dx*dx + dz*dz);
+    
+    // Get radii of both characters
+    float radiusP = width/2;
+    float radiusO = other.getWidth()/2;
+
+    // If this character's bottom is close to other's top and within XZ boundaries
+    if (getBottom() > other.getTop() && getTop() < other.getTop() &&
+    distance < radiusP + radiusO && getDirection() == DOWN) {
+        // Character is standing on top - snap to exact position
+        setY(other.getTop() - getHeight());
+        return DOWN;
     }
-    else if (getBack() < arena.getBack()) 
-    {
-        setZ(arena.getBack());
-        return BACK;
+    
+    // Normal collision case - only if there's also Y-axis overlap
+    if (getBottom() > other.getTop() && getTop() < other.getBottom() &&
+        distance < radiusP + radiusO) {
+        // Normalize the direction vector
+        if (distance > 0) {
+            dx /= distance;
+            dz /= distance;
+        } else {
+            // Centers are exactly at the same position, choose arbitrary direction
+            dx = 1.0f;
+            dz = 0.0f;
+        }
+        
+        // Calculate overlap amount
+        float overlap = (radiusP + radiusO) - distance;
+        
+        // Move this character away from the collision
+        setX(x - dx * overlap * 1.05);
+        setZ(z - dz * overlap * 1.05);
     }
 
     return -1;
@@ -225,12 +272,12 @@ void Character::moveZ(GLfloat dz, GLdouble timeDiff) {
 }
 
 void Character::rotateXZ(GLfloat angle) {
-    walkingDirection += angle;
+    directionAngle += angle;
 
-    if (walkingDirection >= 360.0f)
-        walkingDirection -= 360.0f;
-    else if (walkingDirection < 0.0f)
-        walkingDirection += 360.0f;
+    if (directionAngle >= 360.0f)
+        directionAngle -= 360.0f;
+    else if (directionAngle < 0.0f)
+        directionAngle += 360.0f;
 }
 
 void Character::shoot(std::list<Shoot> &shoots){
@@ -245,3 +292,54 @@ void Character::shoot(std::list<Shoot> &shoots){
     Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
     shoots.push_back(shoot);
 }
+
+void Character::drawCollisonBox() {
+    // Calcular o raio do cilindro (metade da largura)
+    float cylinderRadius = width/2;
+    
+    glPushMatrix();
+        // Salvar estados de atributos
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LINE_BIT);
+            
+            // Mover para o centro do personagem
+            // O cilindro deve estar centrado no plano XZ
+            glTranslatef(x + (width/2), y, z + (depth/2));
+            
+            // Desabilitar iluminação para melhor visualização do wireframe
+            glDisable(GL_LIGHTING);
+            
+            // Definir cor (vermelho) e estilo de linha
+            glColor3f(1.0, 0.0, 0.0);
+            glLineWidth(2.0);
+            
+            // Rotacionar para alinhar com o eixo Y
+            // gluCylinder desenha o cilindro ao longo do eixo Z por padrão
+            // então rotacionamos -90 graus em torno do eixo X para alinhá-lo com Y
+            glRotatef(-90, 1.0, 0.0, 0.0);
+            
+            // Para cilindros, desenhar um wireframe customizado
+            GLUquadricObj *cylinder = gluNewQuadric();
+            gluQuadricDrawStyle(cylinder, GLU_LINE);
+            
+            // Desenha o cilindro (agora alinhado com o eixo Y após a rotação)
+            gluCylinder(cylinder, cylinderRadius, cylinderRadius, height, 16, 5);
+            gluDeleteQuadric(cylinder);
+            
+            // Desenha os círculos das extremidades
+            GLUquadricObj *disk = gluNewQuadric();
+            gluQuadricDrawStyle(disk, GLU_LINE);
+            
+            // Círculo da base (já estamos posicionados na base)
+            gluDisk(disk, 0, cylinderRadius, 16, 1);
+            
+            // Círculo do topo (translada para o topo do cilindro)
+            glTranslatef(0, 0, height);
+            gluDisk(disk, 0, cylinderRadius, 16, 1);
+            gluDeleteQuadric(disk);
+        
+        // Restaurar estados de atributos
+        glPopAttrib();
+    glPopMatrix();
+}
+
+
