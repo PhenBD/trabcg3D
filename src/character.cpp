@@ -184,19 +184,18 @@ int Character::checkCollisionCharacter(Character other) {
     // Calculate distance between centers
     float distance = sqrt(dx*dx + dz*dz);
     
-    // Get radii of both characters
-    float radiusP = width/2;
-    float radiusO = other.getWidth()/2;
+    // Get radius of both characters
+    float radiusP = cylinderRadius;
+    float radiusO = other.getCylinderRadius();
 
-    // If this character's bottom is close to other's top and within XZ boundaries
+
     if (getBottom() > other.getTop() && getTop() < other.getTop() &&
     distance < radiusP + radiusO && getDirection() == DOWN) {
-        // Character is standing on top - snap to exact position
         setY(other.getTop() - getHeight());
         return DOWN;
     }
     
-    // Normal collision case - only if there's also Y-axis overlap
+    // Horizontal collision case
     if (getBottom() > other.getTop() && getTop() < other.getBottom() &&
         distance < radiusP + radiusO) {
         // Normalize the direction vector
@@ -294,9 +293,6 @@ void Character::shoot(std::list<Shoot> &shoots){
 }
 
 void Character::drawCollisonBox() {
-    // Calcular o raio do cilindro (metade da largura)
-    float cylinderRadius = width/2;
-    
     glPushMatrix();
         // Salvar estados de atributos
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LINE_BIT);

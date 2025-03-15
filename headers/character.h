@@ -7,6 +7,7 @@
 #include "arena.h"
 #include "shoot.h"
 #include <list>
+#include <cmath>
 
 // Enum for directions of movement
 enum Direction {UP, DOWN, LEFT, RIGHT, FRONT, BACK};
@@ -29,6 +30,7 @@ private:
     bool walking = false;
     GLfloat legsAnimation = walkSpeed * 3;
     bool player;
+    float cylinderRadius;
 
     void drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B);
     void drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
@@ -39,6 +41,7 @@ public:
     Character(){}; // Default constructor
     Character(GLfloat x, GLfloat y, GLfloat z, GLfloat r, bool player) : Object(x - r, y - r, z, r/2, 2*r, r/2) {
         this->player = player;
+        this->cylinderRadius = sqrt(width*width + depth*depth) / 2;
     };
     void draw(GLfloat R, GLfloat G, GLfloat B);
     void moveX(GLfloat dx, GLdouble timeDiff);
@@ -88,6 +91,9 @@ public:
     };
     bool isPlayer(){
         return player;
+    };
+    float getCylinderRadius(){
+        return cylinderRadius;
     };
 };
 
