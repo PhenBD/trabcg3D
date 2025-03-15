@@ -24,7 +24,7 @@ std::mt19937 rng(std::time(nullptr));
 int camera = 3;
 double camXYAngle=0;
 double camXZAngle=0;
-int camAngle = 60;
+int camAngle = 90;
 bool freeCam = false;
 
 // Debug mode
@@ -211,6 +211,18 @@ void getMouseWorldCoordinates(int mouseX, int mouseY, float &worldX, float &worl
     worldY = (float)posY;
 }
 
+void changeCamera(int angle, int w, int h)
+{
+    glMatrixMode (GL_PROJECTION);
+
+    glLoadIdentity ();
+
+    gluPerspective (angle, 
+            (GLfloat)w / (GLfloat)h, 1, 150.0);
+
+    glMatrixMode (GL_MODELVIEW);
+}
+
 // Keyboard callback
 void keyPress(unsigned char key, int x, int y)
 {
@@ -226,10 +238,12 @@ void keyPress(unsigned char key, int x, int y)
             camera = 3;
             break;
         case ' ': // Tecla de espaço
+        {
             if (!player.isOnAir()) {
                 player.setJumping(true);
             }
             break;
+        }
         case 'w':
         case 'W':
             keyStatus[(int)('w')] = 1; //Using keyStatus trick
@@ -257,9 +271,23 @@ void keyPress(unsigned char key, int x, int y)
         case 'x':
         case 'X':
             freeCam = !freeCam;
-            camXZAngle = player.getDirectionAngle();
-            camXYAngle = 0;
             break;
+        case '-':
+        {
+            int inc = camAngle >= 180 ? 0 : 1;
+            camAngle += inc;
+            changeCamera(camAngle, 
+                    glutGet(GLUT_WINDOW_WIDTH), 
+                    glutGet(GLUT_WINDOW_HEIGHT));
+            break;
+        }
+        case '+':
+        {
+            int inc = camAngle <= 5 ? 0 : 1;
+            camAngle -= inc;
+            changeCamera(camAngle, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+            break;
+        }
         case 27 :
              exit(0);
     }
@@ -899,7 +927,7 @@ void init() {
 
     glLoadIdentity();
     // Use perspective projection instead of orthographic
-    gluPerspective(75.0f,                           // Field of view angle
+    gluPerspective(90.0f,                           // Field of view angle
                   (GLfloat)Width/(GLfloat)Height,   // Aspect ratio
                   0.1f,                             // Near clipping plane
                   200.0f);                          // Far clipping plane
