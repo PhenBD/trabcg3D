@@ -1,5 +1,4 @@
 #include "../headers/character.h"
-#include <algorithm>
 
 void Character::drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B)
 {
@@ -68,11 +67,12 @@ void Character::drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
     glPopMatrix();
 }
 
-void Character::drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat theta)
+void Character::drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ)
 {
     glPushMatrix();
         glTranslatef(x, y, z);
-        glRotatef(theta, 0, 0, 1);
+        glRotatef(thetaXY, 0, 0, 1);
+        glRotatef(thetaXZ, 1, 0, 0);
         drawRect(height * 0.25, height * 0.05, depth * 0.2, 1.0, 1.0, 0.0);
     glPopMatrix();
 }
@@ -97,15 +97,25 @@ void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
     glPopMatrix();
 }
 
-void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
+void Character::draw(GLfloat R, GLfloat G, GLfloat B, int camera) {
     glPushMatrix();
-        glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
-        glRotatef(directionAngle - 90, 0, 1, 0);
-        drawCirc((0.15 * height), R, G, B);
-        glTranslatef(0, (0.15 * height), 0);
-        drawRect(0.3 * height, width, depth, R, G, B);
-        drawArm(0, 0.1 * height, 0, thetaArm);
-        drawLegs(0, 0.3 * height, 0);
+        if (player && camera == 1)
+        {
+            glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
+            glRotatef(directionAngle - 90, 0, 1, 0);
+            glTranslatef(0, (0.15 * height), 0);
+            drawArm(width/2, height * 0.025, -depth/2 + depth * 0.2, thetaArmXY, thetaArmXZ);
+        }
+        else
+        {
+            glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
+            glRotatef(directionAngle - 90, 0, 1, 0);
+            drawCirc((0.15 * height), R, G, B);
+            glTranslatef(0, (0.15 * height), 0);
+            drawRect(0.3 * height, width, depth, R, G, B);
+            drawArm(width/2, height * 0.025, -depth/2 + depth * 0.2, thetaArmXY, thetaArmXZ);
+            drawLegs(0, 0.3 * height, 0);
+        }
     glPopMatrix();
 }
 
@@ -219,14 +229,6 @@ int Character::checkCollisionCharacter(Character other) {
     return -1;
 }
 
-void Character::flipDirection() {
-    thetaArm *= -1;
-    thetaLeft1 *= -1;
-    thetaLeft2 *= -1;
-    thetaRight1 *= -1;
-    thetaRight2 *= -1;
-}
-
 void Character::moveX(GLfloat dx, GLdouble timeDiff) {
     if (walking){
         if (lookingDirection == LEFT){
@@ -280,16 +282,16 @@ void Character::rotateXZ(GLfloat angle) {
 }
 
 void Character::shoot(std::list<Shoot> &shoots){
-    int ySignal = 1, xSignal = 1;
-    if (getThetaArm() < -90 || getThetaArm() > 90)
-        ySignal = -1;
-    if (getThetaArm() > 0)
-        xSignal = -1;
+    // int ySignal = 1, xSignal = 1;
+    // if (getThetaArm() < -90 || getThetaArm() > 90)
+    //     ySignal = -1;
+    // if (getThetaArm() > 0)
+    //     xSignal = -1;
 
-    GLfloat xs = getX() + (width / 2) + (xSignal * height * 0.25 * abs(sin(getThetaArm() * (M_PI / 180.0))));
-    GLfloat ys = getY() + (0.4 * height) + (ySignal * height * 0.25 * abs(cos(getThetaArm() * (M_PI / 180.0))));
-    Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
-    shoots.push_back(shoot);
+    // GLfloat xs = getX() + (width / 2) + (xSignal * height * 0.25 * abs(sin(getThetaArm() * (M_PI / 180.0))));
+    // GLfloat ys = getY() + (0.4 * height) + (ySignal * height * 0.25 * abs(cos(getThetaArm() * (M_PI / 180.0))));
+    // Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
+    // shoots.push_back(shoot);
 }
 
 void Character::drawCollisonBox() {

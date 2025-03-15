@@ -19,7 +19,8 @@ protected:
     GLfloat thetaLeft2 = 0;
     GLfloat thetaRight1 = 0;
     GLfloat thetaRight2 = 0;
-    GLfloat thetaArm = -45;
+    GLfloat thetaArmXY = -45;
+    GLfloat thetaArmXZ = 0;
     GLfloat armHeight = 0.4 * height;
 
 private:
@@ -34,7 +35,7 @@ private:
 
     void drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B);
     void drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
-    void drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat theta);
+    void drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ);
     void drawLegs(GLfloat x, GLfloat y, GLfloat z);
 
 public:
@@ -43,7 +44,7 @@ public:
         this->player = player;
         this->cylinderRadius = sqrt(width*width + depth*depth) / 2;
     };
-    void draw(GLfloat R, GLfloat G, GLfloat B);
+    void draw(GLfloat R, GLfloat G, GLfloat B, int camera);
     void moveX(GLfloat dx, GLdouble timeDiff);
     void moveY(GLfloat dy, GLdouble timeDiff);
     void moveZ(GLfloat dz, GLdouble timeDiff);
@@ -51,7 +52,6 @@ public:
     int checkCollisionObstacle(Obstacle obs);
     int checkCollisionArena(Arena arena);
     int checkCollisionCharacter(Character other);
-    void flipDirection();
     void shoot(std::list<Shoot> &shoots);
     void drawCollisonBox();
 
@@ -61,8 +61,11 @@ public:
     void setLookingDirection(int direction){
         this->lookingDirection = direction;
     };
-    void setThetaArm(GLfloat theta){
-        this->thetaArm = theta;
+    void setThetaArmXY(GLfloat theta){
+        this->thetaArmXY = theta;
+    };
+    void setThetaArmXZ(GLfloat theta){
+        this->thetaArmXZ = theta;
     };
     void setWalking(bool walking){
         this->walking = walking;
@@ -77,9 +80,12 @@ public:
     int getLookingDirection(){
         return lookingDirection;
     };
-    GLfloat getThetaArm(){
-        return thetaArm;
+    GLfloat getThetaArmXY(){
+        return thetaArmXY;
     };  
+    GLfloat getThetaArmXZ(){
+        return thetaArmXZ;
+    };
     GLfloat getArmHeight(){
         return armHeight;
     };

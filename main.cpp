@@ -50,6 +50,10 @@ GLint mouseY = 0.0;
 int lastMouseX = 0;
 int lastMouseY = 0;
 
+// Player arm movement
+GLfloat armAngleXY = -90.0;
+GLfloat armAngleXZ = 0.0;
+
 // Window dimensions
 const GLint Width = 500;
 const GLint Height = 500;
@@ -148,6 +152,19 @@ void passiveMotionCallback(int x, int y) {
         camXYAngle = 60;
     else if (camXYAngle < -60)
         camXYAngle = -60;
+
+    armAngleXZ += (x - lastMouseX) * 0.25;
+    armAngleXY += (y - lastMouseY) * 0.25;
+
+    if (armAngleXZ < -45)
+        armAngleXZ = -45;
+    else if (armAngleXZ > 45)
+        armAngleXZ = 45;
+        
+    if (armAngleXY > -45)
+        armAngleXY = -45;
+    else if (armAngleXY < -135)
+        armAngleXY = -135;
     
     lastMouseX = x;
     lastMouseY = y;
@@ -373,35 +390,8 @@ void updatePlayer(GLdouble timeDiff) {
         checkCollisionPlayer();
     }
 
-    // Flip the direction of the player based on the mouse position
-    if (mouseX < 250 && player.getLookingDirection() == RIGHT) 
-    {
-        // player.setLookingDirection(LEFT);
-        // player.flipDirection();
-    } 
-    else if (mouseX > 250 && player.getLookingDirection() == LEFT)
-    {
-        // player.setLookingDirection(RIGHT);
-        // player.flipDirection();
-    }
-
-    // Move the arm of the player based on the mouse position
-    int signal;
-    if (player.getLookingDirection() == LEFT)
-        signal = 1;
-    else if (player.getLookingDirection() == RIGHT)
-        signal = -1;
-
-    GLfloat mouseWorldX = 0;
-    GLfloat mouseWorldY = 0;
-
-    getMouseWorldCoordinates(mouseX, mouseY, mouseWorldX, mouseWorldY);
-
-    // Use the correct coordinates for the player's arm
-    float armBaseX = player.getX() + (player.getWidth() / 2);
-    float armBaseY = player.getY() + (player.getArmHeight());
-
-    player.setThetaArm(calculateArmAngle(mouseWorldX, mouseWorldY, armBaseX, armBaseY) * signal);
+    player.setThetaArmXY(armAngleXY);
+    player.setThetaArmXZ(-armAngleXZ);
 }
 
 void checkCollisonEnemy(Enemy &enemy) {
@@ -510,7 +500,7 @@ void updateEnemies(GLdouble timeDiff) {
         else if (enemy.getLookingDirection() == RIGHT)
             signal = -1;
         
-        enemy.setThetaArm(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
+        enemy.setThetaArmXY(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
         
         // Shoot periodically
         // if (Enemy::getShootTimer() >= 3000) {
@@ -738,18 +728,83 @@ void renderScene(void) {
 
     switch (camera) {
         case 1: 
-            // Câmera isométrica (vista de cima e um pouco de lado)
-            eyeX = player.getX() + 20.0f;
-            eyeY = player.getY() + 30.0f;
-            eyeZ = player.getZ() + 20.0f;
+        {
+            // Câmera em primeira pessoa (olhos do jogador)
+            float angle = player.getDirectionAngle() * M_PI / 180.0f;
+            
+            // Posicione a câmera na "cabeça" do personagem
+            eyeX = centerX;
+            eyeY = player.getY() + (player.getHeight() * 0.15f); // Altura dos "olhos"
+            eyeZ = centerZ;
+            
+            // Olhe na direção em que o personagem está olhando
+            centerX = eyeX + sin(angle);
+            centerY = eyeY;  // Olhe na horizontal
+            centerZ = eyeZ + cos(angle);
+            
+            // Ajuste o vetor "up" para ficar para cima
+            upX = 0.0f;
+            upY = -1.0f;
+            upZ = 0.0f;
             break;
-        case 2: 
-            // Câmera de topo (visão aérea)
-            eyeX = player.getX() + player.getWidth()/2;
-            eyeY = player.getY() + 40.0f;
-            eyeZ = player.getZ() + player.getDepth()/2;
+        }
+        case 2:
+        {
+            // Calcule a posição base do braço (ombro)
+            float shoulderX = player.getX() + player.getWidth()/2;
+            float shoulderY = player.getY() + player.getHeight() * 0.3f;
+            float shoulderZ = player.getZ() + player.getDepth()/2 + player.getDepth() * 0.2f;
+            
+            // Comprimento do braço para posicionar a câmera na mão
+            float armLength = player.getArmHeight();
+            
+            // Calcule direção do braço usando os ângulos
+            float dirX = sin((armAngleXZ + player.getDirectionAngle()) * M_PI / 180.0f);
+            float dirY = sin((armAngleXY + 90) * M_PI / 180.0f);
+            float dirZ = cos((armAngleXZ + player.getDirectionAngle()) * M_PI / 180.0f);
+
+            // Posição da câmera um pouco acima do braço
+            eyeX = shoulderX + dirX * armLength * 0.2f;
+            eyeY = (shoulderY + dirY * armLength * 0.2f) - player.getHeight() * 0.05f;
+            eyeZ = shoulderZ + dirZ * armLength * 0.2f;
+
+            // Ponto para onde a câmera olha (na direção do braço)
+            centerX = shoulderX + dirX * (armLength + 50.0f);  // Olha além do braço
+            centerY = shoulderY + dirY * (armLength + 50.0f);
+            centerZ = shoulderZ + dirZ * (armLength + 50.0f);
+
+            // float x = eyeX, y = eyeY, z = eyeZ;
+            // float rotatedX1, rotatedY1, rotatedZ1, rotatedX2, rotatedY2, rotatedZ2;
+            // float angle1 = armAngleXZ * M_PI / 180.0f;
+            // float angle2 = -(armAngleXY + 90) * M_PI / 180.0f;
+
+            // std::cout << "angle1: " << armAngleXZ << " angle2: " << -(armAngleXY + 90) << std::endl;
+
+            // // rotate around the Y axis
+            // rotatedX1 = x * cos(angle1) - z * sin(angle1);
+            // rotatedY1 = y;
+            // rotatedZ1 = x * sin(angle1) + z * cos(angle1);
+
+            // // rotate around the Z axis
+            // rotatedX2 = rotatedX1 * cos(angle2) - rotatedY1 * sin(angle2);
+            // rotatedY2 = rotatedX1 * sin(angle2) + rotatedY1 * cos(angle2);
+            // rotatedZ2 = rotatedZ1;
+
+            // normalizeVector3D(dirX, dirY, dirZ);
+            // std::cout << "dirX: " << dirX << " dirY: " << dirY << " dirZ: " << dirZ << std::endl;
+
+            // float zCamX, zCamY, zCamZ;
+            // crossProduct3D(dirX, dirY, dirZ, rotatedX2 - shoulderX, rotatedY2 - (shoulderY + player.getHeight() * 0.05f), rotatedZ2 - shoulderZ, zCamX, zCamY, zCamZ);
+            // normalizeVector3D(zCamX, zCamY, zCamZ);
+
+            // crossProduct3D(zCamX, zCamY, zCamZ, dirX, dirY, dirZ, upX, upY, upZ);
+
+            // std::cout << "upX: " << upX << " upY: " << upY << " upZ: " << upZ << std::endl;
+
             break;
+        }
         case 3:
+        {
             // Câmera em terceira pessoa (atrás do jogador)
             float angle, heightAbove;
             if (freeCam){
@@ -778,6 +833,7 @@ void renderScene(void) {
             }
             
             break;
+        }
     }
 
     glLoadIdentity();
@@ -786,7 +842,7 @@ void renderScene(void) {
     // Draw elements
     arena.draw();
 
-    player.draw();
+    player.draw(camera);
     if (debug){
         player.drawAxis();
         player.drawCollisonBox();
@@ -798,7 +854,7 @@ void renderScene(void) {
             obs.drawAxis();
     }
     for (Enemy enemy : enemies) {
-        enemy.draw();
+        enemy.draw(camera);
         if (debug){
             enemy.drawAxis();
             enemy.drawCollisonBox();
@@ -843,9 +899,9 @@ void init() {
 
     glLoadIdentity();
     // Use perspective projection instead of orthographic
-    gluPerspective(60.0f,                           // Field of view angle
+    gluPerspective(75.0f,                           // Field of view angle
                   (GLfloat)Width/(GLfloat)Height,   // Aspect ratio
-                  1.0f,                             // Near clipping plane
+                  0.1f,                             // Near clipping plane
                   200.0f);                          // Far clipping plane
 
     glMatrixMode(GL_MODELVIEW); // Select the modelview matrix

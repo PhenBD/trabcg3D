@@ -40,3 +40,26 @@ GLfloat calculateArmAngle(GLfloat x, GLfloat y, GLfloat x_origin, GLfloat y_orig
     // Return the angle within the range
     return angleDegrees;
 }
+
+// Normaliza um vetor 3D
+void normalizeVector3D(float &x, float &y, float &z) {
+    float length = sqrt(x*x + y*y + z*z);
+    
+    // Evite divisão por zero
+    if (length > 0.0001f) {
+        x /= length;
+        y /= length;
+        z /= length;
+    }
+}
+
+// Calcula o produto vetorial de dois vetores 3D
+// (ax, ay, az) × (bx, by, bz) = (cx, cy, cz)
+void crossProduct3D(float ax, float ay, float az, 
+                    float bx, float by, float bz,
+                    float &cx, float &cy, float &cz) {
+    cx = ay * bz - az * by;
+    cy = az * bx - ax * bz;
+    cz = ax * by - ay * bx;
+}
+
