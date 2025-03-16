@@ -8,17 +8,24 @@
 #include "utils.h"
 #include <iostream>
 
+// Forward declaration - apenas declara que a classe Character existe
+class Character;
+class Player;
+class Enemy;
+
 class Shoot : public Object{
 private:
-    GLfloat directionAng;
+    GLfloat dirX, dirY, dirZ;
     GLfloat speed;
     GLfloat radius;
     bool isPlayerShoot = false;
 
-    void drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
+    void drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
 public:
-    Shoot(GLfloat x, GLfloat y, GLfloat directionAng, GLfloat speed, GLfloat radius, bool isPlayerShoot) : Object(x - radius, y - radius, 0.0f, 2*radius, 2*radius, 2*radius) {
-        this->directionAng = directionAng; 
+    Shoot(GLfloat x, GLfloat y, GLfloat z, GLfloat dirX, GLfloat dirY, GLfloat dirZ, GLfloat speed, GLfloat radius, bool isPlayerShoot) : Object(x, y, z, 2*radius, 2*radius, 2*radius) {
+        this->dirX = dirX;
+        this->dirY = dirY;
+        this->dirZ = dirZ;
         this->speed = speed;
         this->radius = radius;
         this->isPlayerShoot = isPlayerShoot;
@@ -26,7 +33,10 @@ public:
 
     void draw();
     void move(GLdouble timeDiff);
-    bool checkCollision(Object obj);
+    bool checkCollisionCharacter(Character& character);
+    bool checkCollisionPlayer(Player& player);
+    bool checkCollisionEnemy(Enemy& enemy); 
+    bool checkCollisionObstacle(Object obj);
     bool checkCollisionArena(Arena arena);
     bool operator==(const Shoot& other) const {
         return this->x == other.x && this->y == other.y;

@@ -277,6 +277,8 @@ void keyPress(unsigned char key, int x, int y)
         case 'x':
         case 'X':
             freeCam = !freeCam;
+            camXZAngle = player.getDirectionAngle();
+            camXYAngle = 0;
             break;
         case '-':
         {
@@ -322,10 +324,20 @@ void ResetKeyStatus()
        keyStatus[i] = 0; 
 }
 
+bool once = false;
+
 void checkCollisionPlayer() {
+    // std::cout << "x: " << player.getX() << " y: " << player.getY() << " z: " << player.getZ() << std::endl;
     bool landedOnArena = false;
     bool landedOnObstacle = false;
     bool landedOnEnemy = false;
+
+    // Check collision with obstacles
+    for (Obstacle obs : obstacles) {
+        // The function returns the direction that the player collided with the object
+        if (player.checkCollisionObstacle(obs) == DOWN)
+            landedOnObstacle = true;
+    }
 
     // Check collision with the arena
     // The function returns the direction that the player collided with the arena
@@ -337,11 +349,8 @@ void checkCollisionPlayer() {
         gameWin = true;
     }   
 
-    // Check collision with obstacles
-    for (Obstacle obs : obstacles) {
-        // The function returns the direction that the player collided with the object
-        if (player.checkCollisionObstacle(obs) == DOWN)
-            landedOnObstacle = true;
+    if (landedOnArena && !landedOnObstacle) {
+        // std::cout << "landedOnArena: " << landedOnArena << " landedOnObstacle: " << landedOnObstacle << std::endl;
     }
 
     // Check collision with enemies
@@ -350,7 +359,6 @@ void checkCollisionPlayer() {
         if (player.checkCollisionCharacter(enemy) == DOWN)
             landedOnEnemy = true;
     }
-
     // If the player landed on anything, it is not on air
     if (landedOnArena || landedOnObstacle || landedOnEnemy) {
         player.setOnAir(false);
@@ -366,6 +374,8 @@ void updatePlayer(GLdouble timeDiff) {
     // Treat keyPress
     if(keyStatus[(int)('w')])
     {
+        player.setWalking(true);
+
         player.moveX(player.getWalkSpeed() * sin(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
         player.moveZ(player.getWalkSpeed() * cos(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
 
@@ -376,11 +386,12 @@ void updatePlayer(GLdouble timeDiff) {
             player.setDirection(LEFT);
         }
 
-        player.setWalking(true);
         checkCollisionPlayer();
     }
     else if(keyStatus[(int)('s')])
     {
+        player.setWalking(true);
+
         player.moveX(-player.getWalkSpeed() * sin(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
         player.moveZ(-player.getWalkSpeed() * cos(player.getDirectionAngle() * M_PI / 180.0f), timeDiff);
 
@@ -391,7 +402,6 @@ void updatePlayer(GLdouble timeDiff) {
             player.setDirection(RIGHT);
         }
 
-        player.setWalking(true);
         checkCollisionPlayer();
     }
     if(keyStatus[(int)('a')] && !player.isOnAir())
@@ -409,6 +419,7 @@ void updatePlayer(GLdouble timeDiff) {
     // Treat jumping
     if (player.getJumpingTime() <= 1000 && player.isJumping()) 
     {
+        player.setWalking(true);
         player.moveY(-player.getJumpSpeed(), timeDiff);
         player.setOnAir(true);
         player.addJumpingTime(timeDiff);
@@ -423,7 +434,9 @@ void updatePlayer(GLdouble timeDiff) {
     
     // Gravity
     if (!player.isJumping()){
+        player.setWalking(true);
         player.moveY((player.getJumpSpeed()), timeDiff);
+        player.setWalking(false);
         player.setDirection(DOWN);
         checkCollisionPlayer();
     }
@@ -438,38 +451,30 @@ void checkCollisonEnemy(Enemy &enemy) {
         int collisonDirectionObstacle = -1;
         int collisonDirectionPlayer = -1;
 
+        // Check collision with obstacles
+        for (Obstacle obs : obstacles) {
+            collisonDirection = enemy.checkCollisionObstacle(obs);
+            if (collisonDirection != -1)
+                collisonDirectionObstacle = collisonDirection;
+            
+            // Make the enemy stay on the platform
+            if (collisonDirection == DOWN){
+                if (enemy.getLeft() < obs.getRight()){
+                    enemy.setX(obs.getRight() - enemy.getWidth());
+                }   
+                else if (enemy.getRight() > obs.getLeft()){
+                    enemy.setX(obs.getLeft());
+                }
+            }
+        }
+
         // Check collision with the arena
         collisonDirection = enemy.checkCollisionArena(arena);
         if (collisonDirection != -1)
             collisonDirectionArena = collisonDirection;
 
-        // // Check collision with obstacles
-        // for (Obstacle obs : obstacles) {
-        //     collisonDirection = enemy.checkCollisionObstacle(obs);
-        //     if (collisonDirection != -1)
-        //         collisonDirectionObstacle = collisonDirection;
-            
-        //     // Make the enemy stay on the platform
-        //     if (collisonDirection == DOWN){
-        //         if (enemy.getLeft() < obs.getLeft()){
-        //             enemy.setDirectionAngle(RIGHT);
-        //         }   
-        //         else if (enemy.getRight() > obs.getRight()){
-        //             enemy.setDirectionAngle(LEFT);
-        //         }
-        //     }
-        // }
-
-        // // Check collision with the player
-        // enemy.checkCollisionCharacter(player);
-
-        // // Flip the direction of the enemy based on the collision direction
-        // if (collisonDirectionArena == LEFT || collisonDirectionObstacle == LEFT) {
-        //     enemy.setDirectionAngle(RIGHT);
-        // }
-        // else if (collisonDirectionArena == RIGHT || collisonDirectionObstacle == RIGHT) {
-        //     enemy.setDirectionAngle(LEFT);
-        // }
+        // Check collision with the player
+        enemy.checkCollisionCharacter(player);
 }
 
 void updateEnemies(GLdouble timeDiff) {
@@ -500,8 +505,15 @@ void updateEnemies(GLdouble timeDiff) {
         }
         
         if (enemy.getDirectionAngle() == enemy.getNextDirectionAngle() && enemy.getWalkTimer() < enemy.getMaxWalkTimer()) {
+            enemy.setWalking(true);
             enemy.moveX(enemy.getWalkSpeed() * sin(enemy.getDirectionAngle() * M_PI / 180.0f), timeDiff);
             enemy.moveZ(enemy.getWalkSpeed() * cos(enemy.getDirectionAngle() * M_PI / 180.0f), timeDiff);
+            if (sin(enemy.getDirectionAngle() * M_PI / 180.0f) > 0){
+                enemy.setDirection(RIGHT);
+            }
+            else if (sin(enemy.getDirectionAngle() * M_PI / 180.0f) < 0){
+                enemy.setDirection(LEFT);
+            }
             checkCollisonEnemy(enemy);
         }
 
@@ -541,9 +553,9 @@ void updateEnemies(GLdouble timeDiff) {
         enemy.setThetaArmXY(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
         
         // Shoot periodically
-        // if (Enemy::getShootTimer() >= 3000) {
-        //     enemy.shoot(shoots);
-        // }
+        if (Enemy::getShootTimer() >= 3000) {
+            enemy.shoot(shoots);
+        }
     }
 
     if (Enemy::getShootTimer() >= 3000) {
@@ -561,7 +573,7 @@ void updateShoots(GLdouble timeDiff) {
         }
 
         for (Obstacle obs : obstacles) {
-            if (it->checkCollision(obs)) {
+            if (it->checkCollisionObstacle(obs)) {
                 it = shoots.erase(it); // Use erase to remove the element and get the next iterator
                 break;
             }
@@ -569,7 +581,7 @@ void updateShoots(GLdouble timeDiff) {
 
         if (it->isPlayer()) {
             for (Enemy &enemy : enemies) {
-                if (it->checkCollision(enemy)) {
+                if (it->checkCollisionEnemy(enemy)) {
                     it = shoots.erase(it); // Use erase to remove the element and get the next iterator
                     enemies.remove(enemy);
                     break;
@@ -577,7 +589,7 @@ void updateShoots(GLdouble timeDiff) {
             }
         }
 
-        if(it->checkCollision(player)) {
+        if(it->checkCollisionPlayer(player)) {
             if (!it->isPlayer()) {
                 ended = true;
                 gameOver = true;
@@ -723,6 +735,10 @@ void idle(void)
     timeDiference = currentTime - previousTime; // Elapsed time from the previous frame.
     previousTime = currentTime; //Update previous time
 
+    if (timeDiference > 7){
+        timeDiference = 7;
+    }
+
     /*if (debug) {
         if (keyStatus[(int)('r')])
             restart();
@@ -847,13 +863,13 @@ void renderScene(void) {
             float angle, heightAbove;
             if (freeCam){
                 angle = camXZAngle * M_PI / 180.0f;
-                heightAbove = (-player.getHeight() * 2) + ((player.getHeight() * 2) * (camXYAngle * M_PI / 180.0f));  
+                heightAbove = (-player.getHeight() * 1.5) + (player.getHeight() * (camXYAngle * M_PI / 180.0f));  
             }
             else {
                 angle = player.getDirectionAngle() * M_PI / 180.0f;
-                heightAbove = -player.getHeight() * 2;     // Altura acima do jogador
+                heightAbove = -player.getHeight() * 1.5;     // Altura acima do jogador
             }
-            float distanceBehind = player.getHeight() * 3; // Distância atrás do jogador
+            float distanceBehind = player.getHeight() * 1.5; // Distância atrás do jogador
             
             
             // Posição ideal da câmera (antes da verificação de colisão)
@@ -940,7 +956,7 @@ void init() {
     gluPerspective(90.0f,                           // Field of view angle
                   (GLfloat)Width/(GLfloat)Height,   // Aspect ratio
                   0.1f,                             // Near clipping plane
-                  200.0f);                          // Far clipping plane
+                  400.0f);                          // Far clipping plane
 
     glMatrixMode(GL_MODELVIEW); // Select the modelview matrix
     glLoadIdentity();

@@ -55,7 +55,7 @@ void Character::drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R
     glPopMatrix();
 }
 
-void Character::drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
+void Character::drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
 {
     glPushMatrix();
         glColor3f(R, G, B);
@@ -73,7 +73,7 @@ void Character::drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloa
         glTranslatef(x, y, z);
         glRotatef(thetaXY, 0, 0, 1);
         glRotatef(thetaXZ, 1, 0, 0);
-        drawRect(height * 0.25, height * 0.05, depth * 0.2, 1.0, 1.0, 0.0);
+        drawRect(armHeight, height * 0.05, bodyDepth * 0.2, 1.0, 1.0, 0.0);
     glPopMatrix();
 }
 
@@ -81,39 +81,63 @@ void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
     glPushMatrix();
         glTranslatef(x, y, z);
         glRotatef(thetaLeft1, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, depth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
         glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaLeft2, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, depth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
     glPopMatrix();
 
     glPushMatrix();
         glTranslatef(x, y, z);
         glRotatef(thetaRight1, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, depth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
         glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaRight2, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, depth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
     glPopMatrix();
 }
 
 void Character::draw(GLfloat R, GLfloat G, GLfloat B, int camera) {
     glPushMatrix();
+        // // Calcule a posição base do braço (ombro)
+        // float shoulderX = (getX() + getWidth()/2) + sin(getDirectionAngle() * M_PI / 180.0f) * (width/2);
+        // float shoulderY = getY() + getHeight() * 0.325f;
+        // float shoulderZ = (getZ() + getDepth()/2) + cos(getDirectionAngle() * M_PI / 180.0f) * (depth/2);
+
+        // // Calcule direção do braço usando os ângulos
+        // float dirX = sin((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
+        // float dirY = sin((getThetaArmXY() + 90) * M_PI / 180.0f);
+        // float dirZ = cos((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
+
+        // // Posição da ponta da arma
+        // float armTipX = shoulderX + dirX * getArmHeight();
+        // float armTipY = shoulderY + dirY * getArmHeight();
+        // float armTipZ = shoulderZ + dirZ * getArmHeight();
+
+        // glPushMatrix();
+        //     glTranslatef(shoulderX, shoulderY, shoulderZ);
+        //     drawSphere(0.5, 1.0, 0.0, 0.0);
+        // glPopMatrix();
+        // glPushMatrix();
+        //     glTranslatef(armTipX, armTipY, armTipZ);
+        //     drawSphere(0.5, 1.0, 1.0, 1.0);
+        // glPopMatrix();
+
         if (player && camera == 1)
         {
             glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
             glRotatef(directionAngle - 90, 0, 1, 0);
             glTranslatef(0, (0.15 * height), 0);
-            drawArm(width/2, height * 0.025, -depth/2 + depth * 0.2, thetaArmXY, thetaArmXZ);
+            drawArm(bodyWidth/2, height * 0.025, 0, thetaArmXY, thetaArmXZ);
         }
         else
         {
             glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
             glRotatef(directionAngle - 90, 0, 1, 0);
-            drawCirc((0.15 * height), R, G, B);
+            drawSphere((0.15 * height), R, G, B);
             glTranslatef(0, (0.15 * height), 0);
-            drawRect(0.3 * height, width, depth, R, G, B);
-            drawArm(width/2, height * 0.025, -depth/2 + depth * 0.2, thetaArmXY, thetaArmXZ);
+            drawRect(0.3 * height, bodyWidth, bodyDepth, R, G, B);
+            drawArm(bodyWidth/2, height * 0.025, 0, thetaArmXY, thetaArmXZ);
             drawLegs(0, 0.3 * height, 0);
         }
     glPopMatrix();
@@ -230,46 +254,48 @@ int Character::checkCollisionCharacter(Character other) {
 }
 
 void Character::moveX(GLfloat dx, GLdouble timeDiff) {
-    if (walking){
-        if (lookingDirection == LEFT){
-            thetaLeft1 += -legsAnimation * timeDiff;
-            thetaLeft2 += -legsAnimation / 1.5 * timeDiff;
-            thetaRight1 += legsAnimation * timeDiff;
-            thetaRight2 += -legsAnimation / 1.5 * timeDiff;
-        }
-        else if (lookingDirection == RIGHT){
-            thetaLeft1 += legsAnimation * timeDiff;
-            thetaLeft2 += legsAnimation / 1.5 * timeDiff;
-            thetaRight1 += -legsAnimation * timeDiff;
-            thetaRight2 += legsAnimation / 1.5 * timeDiff;
-        }
+    // if (walking){
+    //     if (lookingDirection == LEFT){
+    //         thetaLeft1 += -legsAnimation * timeDiff;
+    //         thetaLeft2 += -legsAnimation / 1.5 * timeDiff;
+    //         thetaRight1 += legsAnimation * timeDiff;
+    //         thetaRight2 += -legsAnimation / 1.5 * timeDiff;
+    //     }
+    //     else if (lookingDirection == RIGHT){
+    //         thetaLeft1 += legsAnimation * timeDiff;
+    //         thetaLeft2 += legsAnimation / 1.5 * timeDiff;
+    //         thetaRight1 += -legsAnimation * timeDiff;
+    //         thetaRight2 += legsAnimation / 1.5 * timeDiff;
+    //     }
 
-        if (thetaLeft1 > 45 || thetaLeft1 < -45 || thetaRight2 > 45 || thetaRight2 < -45){
-            legsAnimation *= -1;
-        }
-        if ((thetaLeft1 > 0 || thetaLeft2 > 0 || thetaRight1 < 0 || thetaRight2 > 0) && lookingDirection == LEFT){
-            legsAnimation *= -1;
-        }
-        else if ((thetaLeft1 < 0 || thetaLeft2 < 0 || thetaRight1 > 0 || thetaRight2 < 0) && lookingDirection == RIGHT){
-            legsAnimation *= -1;
-        }
-    }
-    else {
-        thetaLeft1 = 0;
-        thetaLeft2 = 0;
-        thetaRight1 = 0;
-        thetaRight2 = 0;
-    }
-    
-    setX(x + dx * timeDiff);
+    //     if (thetaLeft1 > 45 || thetaLeft1 < -45 || thetaRight2 > 45 || thetaRight2 < -45){
+    //         legsAnimation *= -1;
+    //     }
+    //     if ((thetaLeft1 > 0 || thetaLeft2 > 0 || thetaRight1 < 0 || thetaRight2 > 0) && lookingDirection == LEFT){
+    //         legsAnimation *= -1;
+    //     }
+    //     else if ((thetaLeft1 < 0 || thetaLeft2 < 0 || thetaRight1 > 0 || thetaRight2 < 0) && lookingDirection == RIGHT){
+    //         legsAnimation *= -1;
+    //     }
+    // }
+    // else {
+    //     thetaLeft1 = 0;
+    //     thetaLeft2 = 0;
+    //     thetaRight1 = 0;
+    //     thetaRight2 = 0;
+    // }
+    if (walking)
+        setX(x + dx * timeDiff);
 }
 
 void Character::moveY(GLfloat dy, GLdouble timeDiff) {
-    setY(y + dy * timeDiff);
+    if (walking)
+        setY(y + dy * timeDiff);
 }
 
 void Character::moveZ(GLfloat dz, GLdouble timeDiff) {
-    setZ(z + dz * timeDiff);
+    if (walking)
+        setZ(z + dz * timeDiff);
 }
 
 void Character::rotateXZ(GLfloat angle) {
@@ -282,16 +308,23 @@ void Character::rotateXZ(GLfloat angle) {
 }
 
 void Character::shoot(std::list<Shoot> &shoots){
-    // int ySignal = 1, xSignal = 1;
-    // if (getThetaArm() < -90 || getThetaArm() > 90)
-    //     ySignal = -1;
-    // if (getThetaArm() > 0)
-    //     xSignal = -1;
+    // Calcule a posição base do braço (ombro)
+    float shoulderX = (getX() + getWidth()/2) + sin(getDirectionAngle() * M_PI / 180.0f) * (width/2);
+    float shoulderY = getY() + getHeight() * 0.325f;
+    float shoulderZ = (getZ() + getDepth()/2) + cos(getDirectionAngle() * M_PI / 180.0f) * (depth/2);
 
-    // GLfloat xs = getX() + (width / 2) + (xSignal * height * 0.25 * abs(sin(getThetaArm() * (M_PI / 180.0))));
-    // GLfloat ys = getY() + (0.4 * height) + (ySignal * height * 0.25 * abs(cos(getThetaArm() * (M_PI / 180.0))));
-    // Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
-    // shoots.push_back(shoot);
+    // Calcule direção do braço usando os ângulos
+    float dirX = sin((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
+    float dirY = sin((getThetaArmXY() + 90) * M_PI / 180.0f);
+    float dirZ = cos((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
+
+    // Posição da ponta da arma
+    float armTipX = shoulderX + dirX * getArmHeight();
+    float armTipY = shoulderY + dirY * getArmHeight();
+    float armTipZ = shoulderZ + dirZ * getArmHeight();
+
+    Shoot shoot(armTipX, armTipY, armTipZ, dirX, dirY, dirZ, walkSpeed * 2, height * 0.07, player);
+    shoots.push_back(shoot);
 }
 
 void Character::drawCollisonBox() {

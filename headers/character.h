@@ -21,7 +21,7 @@ protected:
     GLfloat thetaRight2 = 0;
     GLfloat thetaArmXY = -45;
     GLfloat thetaArmXZ = 0;
-    GLfloat armHeight = 0.4 * height;
+    GLfloat armHeight = 0.2 * height;
 
 private:
     int direction = RIGHT;
@@ -32,9 +32,10 @@ private:
     GLfloat legsAnimation = walkSpeed * 3;
     bool player;
     float cylinderRadius;
+    float bodyWidth, bodyDepth;
 
     void drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B);
-    void drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
+    void drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
     void drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ);
     void drawLegs(GLfloat x, GLfloat y, GLfloat z);
 
@@ -43,6 +44,12 @@ public:
     Character(GLfloat x, GLfloat y, GLfloat z, GLfloat r, bool player) : Object(x - r, y - r, z, r/2, 2*r, r/2) {
         this->player = player;
         this->cylinderRadius = sqrt(width*width + depth*depth) / 2;
+        this->bodyWidth = width;
+        this->bodyDepth = depth;
+        this->width = 2 * cylinderRadius;
+        this->right = x + this->width;
+        this->depth = 2 * cylinderRadius;
+        this->front = z + this->depth;
     };
     void draw(GLfloat R, GLfloat G, GLfloat B, int camera);
     void moveX(GLfloat dx, GLdouble timeDiff);
