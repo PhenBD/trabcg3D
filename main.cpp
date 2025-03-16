@@ -357,6 +357,7 @@ void checkCollisionPlayer() {
         if (player.checkCollisionCharacter(enemy) == DOWN)
             landedOnEnemy = true;
     }
+
     // If the player landed on anything, it is not on air
     if (landedOnArena || landedOnObstacle || landedOnEnemy) {
         player.setOnAir(false);
@@ -402,6 +403,11 @@ void updatePlayer(GLdouble timeDiff) {
 
         checkCollisionPlayer();
     }
+    else {
+        player.setWalking(false);
+        player.moveX(0, timeDiff);
+    }
+
     if(keyStatus[(int)('a')] && !player.isOnAir())
     {
         player.rotateXZ(-0.2 * timeDiff);
@@ -409,9 +415,6 @@ void updatePlayer(GLdouble timeDiff) {
     else if(keyStatus[(int)('d')] && !player.isOnAir())
     {
         player.rotateXZ(0.2 * timeDiff);
-    }
-    else {
-        player.setWalking(false);
     }
     
     // Treat jumping
@@ -610,43 +613,6 @@ void restart() {
     ReadSvg(arenaSVGFilename);
 }
 
-void drawText(GLfloat x, GLfloat y, const char* text, GLfloat r, GLfloat g, GLfloat b) {
-    GLint matrixMode;
-    glGetIntegerv(GL_MATRIX_MODE, &matrixMode); // Save the current matrix mode
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix(); // Save the current projection matrix
-    glLoadIdentity();
-    glOrtho(0, Width, Height, 0, -1, 1);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix(); // Save the current model-view matrix
-    glLoadIdentity();
-
-    glColor3f(r, g, b);
-
-    GLfloat w = 0;
-    const char* textAux = text;
-    while (*textAux) {
-        w += glutBitmapWidth(font, *textAux);
-        textAux++;
-    }
-
-    //Define a posicao onde vai comecar a imprimir
-    glRasterPos2f(x - w/2, y);
-
-    //Imprime um caractere por vez
-    while(*text){
-        glutBitmapCharacter(font, *text);
-        text++;
-    }
-
-    glPopMatrix(); // Restore the previous model-view matrix
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix(); // Restore the previous projection matrix
-    glMatrixMode(matrixMode); // Restore the previous matrix mode
-}
-
 // Função auxiliar para verificar se um ponto está dentro de um obstáculo
 bool isPointInsideObstacle(float x, float y, float z, Obstacle obs) {
     return (x >= obs.getLeft() && x <= obs.getRight() && 
@@ -754,6 +720,58 @@ void idle(void)
     }
     
     glutPostRedisplay();
+}
+
+void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, double b)
+{
+    GLint matrixMode;
+    GLboolean depthTestEnabled;
+    
+    // Salvar estados atuais
+    glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
+    depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+    
+    // Desativar depth test para garantir que o texto seja desenhado na frente
+    glDisable(GL_DEPTH_TEST);
+    
+    // Configurar projeção ortográfica para coordenadas de tela
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, Width, Height, 0, -1, 1);
+    
+    // Resetar a matriz de modelview
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    
+    // Calcular largura do texto para centralização
+    GLfloat textWidth = 0;
+    const char* p = text;
+    while (*p) {
+        textWidth += glutBitmapWidth(GLUT_BITMAP_9_BY_15, *p);
+        p++;
+    }
+    
+    // Desenhar o texto centralizado
+    glColor3f(r, g, b);
+    glRasterPos2f(x - textWidth/2, y);
+    
+    // Renderizar caracteres
+    while (*text) {
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *text);
+        text++;
+    }
+    
+    // Restaurar estados
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    
+    if (depthTestEnabled)
+        glEnable(GL_DEPTH_TEST);
+    
+    glMatrixMode(matrixMode);
 }
 
 // Render function
@@ -916,11 +934,11 @@ void renderScene(void) {
     // Draw texts
     if (ended){
         if (gameOver)
-            drawText(Width/2, Height/2 - 20, "Game Over", 1.0f, 0.0f, 0.0f);
+            PrintText(Width/2, Height/2 - 20, "Game Over", 1.0f, 0.0f, 0.0f);
         else if (gameWin)
-            drawText(Width/2, Height/2 - 20, "You Win!", 0.0f, 1.0f, 0.0f);
+            PrintText(Width/2, Height/2 - 20, "You Win!", 0.0f, 1.0f, 0.0f);
         
-        drawText(Width/2, Height/2, "Press 'R' to restart", 1.0f, 1.0f, 1.0f);
+        PrintText(Width/2, Height/2, "Press 'R' to restart", 1.0f, 1.0f, 1.0f);
     }
 
     glutSwapBuffers(); // Draw the new frame of the game.

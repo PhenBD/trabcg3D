@@ -79,21 +79,21 @@ void Character::drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloa
 
 void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
     glPushMatrix();
-        glTranslatef(x, y, z);
+        glTranslatef(x, y, z + bodyDepth * 0.3);
         glRotatef(thetaLeft1, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
         glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaLeft2, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(x, y, z);
+        glTranslatef(x, y, z - bodyDepth * 0.3);
         glRotatef(thetaRight1, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
         glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaRight2, 0, 0, 1);
-        drawRect(height * 0.22, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
     glPopMatrix();
 }
 
@@ -254,36 +254,36 @@ int Character::checkCollisionCharacter(Character other) {
 }
 
 void Character::moveX(GLfloat dx, GLdouble timeDiff) {
-    // if (walking){
-    //     if (lookingDirection == LEFT){
-    //         thetaLeft1 += -legsAnimation * timeDiff;
-    //         thetaLeft2 += -legsAnimation / 1.5 * timeDiff;
-    //         thetaRight1 += legsAnimation * timeDiff;
-    //         thetaRight2 += -legsAnimation / 1.5 * timeDiff;
-    //     }
-    //     else if (lookingDirection == RIGHT){
-    //         thetaLeft1 += legsAnimation * timeDiff;
-    //         thetaLeft2 += legsAnimation / 1.5 * timeDiff;
-    //         thetaRight1 += -legsAnimation * timeDiff;
-    //         thetaRight2 += legsAnimation / 1.5 * timeDiff;
-    //     }
+    if (walking){
+        if (lookingDirection == LEFT){
+            thetaLeft1 += -legsAnimation * timeDiff;
+            thetaLeft2 += -legsAnimation / 1.5 * timeDiff;
+            thetaRight1 += legsAnimation * timeDiff;
+            thetaRight2 += -legsAnimation / 1.5 * timeDiff;
+        }
+        else if (lookingDirection == RIGHT){
+            thetaLeft1 += legsAnimation * timeDiff;
+            thetaLeft2 += legsAnimation / 1.5 * timeDiff;
+            thetaRight1 += -legsAnimation * timeDiff;
+            thetaRight2 += legsAnimation / 1.5 * timeDiff;
+        }
 
-    //     if (thetaLeft1 > 45 || thetaLeft1 < -45 || thetaRight2 > 45 || thetaRight2 < -45){
-    //         legsAnimation *= -1;
-    //     }
-    //     if ((thetaLeft1 > 0 || thetaLeft2 > 0 || thetaRight1 < 0 || thetaRight2 > 0) && lookingDirection == LEFT){
-    //         legsAnimation *= -1;
-    //     }
-    //     else if ((thetaLeft1 < 0 || thetaLeft2 < 0 || thetaRight1 > 0 || thetaRight2 < 0) && lookingDirection == RIGHT){
-    //         legsAnimation *= -1;
-    //     }
-    // }
-    // else {
-    //     thetaLeft1 = 0;
-    //     thetaLeft2 = 0;
-    //     thetaRight1 = 0;
-    //     thetaRight2 = 0;
-    // }
+        if (thetaLeft1 > 45 || thetaLeft1 < -45 || thetaRight2 > 45 || thetaRight2 < -45){
+            legsAnimation *= -1;
+        }
+        if ((thetaLeft1 > 0 || thetaLeft2 > 0 || thetaRight1 < 0 || thetaRight2 > 0) && lookingDirection == LEFT){
+            legsAnimation *= -1;
+        }
+        else if ((thetaLeft1 < 0 || thetaLeft2 < 0 || thetaRight1 > 0 || thetaRight2 < 0) && lookingDirection == RIGHT){
+            legsAnimation *= -1;
+        }
+    }
+    else {
+        thetaLeft1 = 0;
+        thetaLeft2 = 0;
+        thetaRight1 = 0;
+        thetaRight2 = 0;
+    }
     if (walking)
         setX(x + dx * timeDiff);
 }
