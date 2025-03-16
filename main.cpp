@@ -144,14 +144,16 @@ void ReadSvg(const char* filename) {
 
 // Mouse passive position callback
 void passiveMotionCallback(int x, int y) {
-    camXZAngle += x - lastMouseX;
-    camXYAngle += y - lastMouseY;
-    
-    camXZAngle = (int)camXZAngle % 360;
-    if (camXYAngle > 60)
-        camXYAngle = 60;
-    else if (camXYAngle < -60)
-        camXYAngle = -60;
+    if (freeCam) {
+        camXZAngle += x - lastMouseX;
+        camXYAngle += y - lastMouseY;
+        
+        camXZAngle = (int)camXZAngle % 360;
+        if (camXYAngle > 60)
+            camXYAngle = 60;
+        else if (camXYAngle < -60)
+            camXYAngle = -60;
+    }
 
     armAngleXZ += (x - lastMouseX) * 0.25;
     armAngleXY += (y - lastMouseY) * 0.25;
@@ -277,8 +279,6 @@ void keyPress(unsigned char key, int x, int y)
         case 'x':
         case 'X':
             freeCam = !freeCam;
-            camXZAngle = player.getDirectionAngle();
-            camXYAngle = 0;
             break;
         case '-':
         {
@@ -323,8 +323,6 @@ void ResetKeyStatus()
     for(i = 0; i < 256; i++)
        keyStatus[i] = 0; 
 }
-
-bool once = false;
 
 void checkCollisionPlayer() {
     // std::cout << "x: " << player.getX() << " y: " << player.getY() << " z: " << player.getZ() << std::endl;
@@ -861,14 +859,9 @@ void renderScene(void) {
         {
             // Câmera em terceira pessoa (atrás do jogador)
             float angle, heightAbove;
-            if (freeCam){
-                angle = camXZAngle * M_PI / 180.0f;
-                heightAbove = (-player.getHeight() * 1.5) + (player.getHeight() * (camXYAngle * M_PI / 180.0f));  
-            }
-            else {
-                angle = player.getDirectionAngle() * M_PI / 180.0f;
-                heightAbove = -player.getHeight() * 1.5;     // Altura acima do jogador
-            }
+            angle = camXZAngle * M_PI / 180.0f;
+            heightAbove = (-player.getHeight() * 1.5) + (player.getHeight() * (camXYAngle * M_PI / 180.0f));  
+
             float distanceBehind = player.getHeight() * 1.5; // Distância atrás do jogador
             
             
@@ -945,6 +938,9 @@ void init() {
 
     ResetKeyStatus();
     ReadSvg(arenaSVGFilename);
+
+    camXZAngle = player.getDirectionAngle();
+    camXYAngle = 0;
 
     // The color the windows will redraw. Its done to erase the previous frame.
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black, no opacity(alpha).
