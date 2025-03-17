@@ -9,7 +9,8 @@ class Arena : public Object {
 public:
     Arena(){}; // Default constructor
     Arena(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GLfloat depth) : Object(x, y, z, width, height, depth) {};
-    void draw();
+    void draw(bool nightMode, GLuint texture);
+    void displayPlane(GLuint texture);
 };
 
 #endif	/* ARENA_H */

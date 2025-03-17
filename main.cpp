@@ -12,6 +12,7 @@
 #include "headers/enemy.h"
 #include "headers/arena.h"
 #include "headers/object.h"
+#include "headers/imageloader.h"
 #include <random>
 #include <ctime>
 
@@ -22,10 +23,14 @@ std::mt19937 rng(std::time(nullptr));
 
 // Camera
 int camera = 3;
+int cameraBefore = 3;
 double camXYAngle=0;
 double camXZAngle=0;
 int camAngle = 90;
 bool freeCam = false;
+
+// Night mode
+bool nightMode = false;
 
 // Debug mode
 bool debug = false;
@@ -57,6 +62,10 @@ GLfloat armAngleXZ = 0.0;
 // Window dimensions
 const GLint Width = 500;
 const GLint Height = 500;
+
+// Textures
+GLuint textureWall;
+GLuint textureObstacle;
 
 //Components of the virtual world being modeled
 Arena arena;
@@ -142,6 +151,33 @@ void ReadSvg(const char* filename) {
     }
 }
 
+GLuint LoadTextureRAW( const char * filename )
+{
+
+    GLuint texture;
+    
+    Image* image = loadBMP(filename);
+
+    glGenTextures( 1, &texture );
+    glBindTexture( GL_TEXTURE_2D, texture );
+    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,GL_MODULATE );
+//    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,GL_REPLACE );
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR );
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR );
+    glTexImage2D(GL_TEXTURE_2D,                //Always GL_TEXTURE_2D
+                             0,                            //0 for now
+                             GL_RGB,                       //Format OpenGL uses for image
+                             image->width, image->height,  //Width and height
+                             0,                            //The border of the image
+                             GL_RGB, //GL_RGB, because pixels are stored in RGB format
+                             GL_UNSIGNED_BYTE, //GL_UNSIGNED_BYTE, because pixels are stored
+                                               //as unsigned numbers
+                             image->pixels);               //The actual pixel data
+    delete image;
+
+    return texture;
+}
+
 // Mouse passive position callback
 void passiveMotionCallback(int x, int y) {
     if (freeCam) {
@@ -176,10 +212,47 @@ void passiveMotionCallback(int x, int y) {
 void motionCallback(int x, int y) {
     mouseX = x;
     mouseY = y;
+    
+    // Copiar comportamento do passiveMotionCallback
+    if (freeCam) {
+        camXZAngle += x - lastMouseX;
+        camXYAngle += y - lastMouseY;
+        
+        camXZAngle = (int)camXZAngle % 360;
+        if (camXYAngle > 60)
+            camXYAngle = 60;
+        else if (camXYAngle < -60)
+            camXYAngle = -60;
+    }
+
+    armAngleXZ += (x - lastMouseX) * 0.25;
+    armAngleXY += (y - lastMouseY) * 0.25;
+
+    if (armAngleXZ < -45)
+        armAngleXZ = -45;
+    else if (armAngleXZ > 45)
+        armAngleXZ = 45;
+        
+    if (armAngleXY > -45)
+        armAngleXY = -45;
+    else if (armAngleXY < -135)
+        armAngleXY = -135;
+    
+    lastMouseX = x;
+    lastMouseY = y;
 }
 
 // Mouse callback
 void mouseClick(int button, int state, int x, int y) {
+    if (button == GLUT_RIGHT_BUTTON) {
+        if (state == GLUT_DOWN) {
+            cameraBefore = camera;
+            camera = 2;
+        }
+        if (state == GLUT_UP) {
+            camera = cameraBefore;
+        }
+    }
     if (button == GLUT_LEFT_BUTTON) {
         if (state == GLUT_DOWN) {
             if (!ended)
@@ -220,7 +293,7 @@ void changeCamera(int angle, int w, int h)
     glLoadIdentity ();
 
     gluPerspective (angle, 
-            (GLfloat)w / (GLfloat)h, 1, 150.0);
+            (GLfloat)w / (GLfloat)h, 0.1f, 400.0f);
 
     glMatrixMode (GL_MODELVIEW);
 }
@@ -279,6 +352,10 @@ void keyPress(unsigned char key, int x, int y)
         case 'x':
         case 'X':
             freeCam = !freeCam;
+            break;
+        case 'n':
+        case 'N':
+            nightMode = !nightMode;
             break;
         case '-':
         {
@@ -725,14 +802,14 @@ void idle(void)
 void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, double b)
 {
     GLint matrixMode;
-    GLboolean depthTestEnabled;
-    
+
     // Salvar estados atuais
     glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
-    depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
     
     // Desativar depth test para garantir que o texto seja desenhado na frente
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
     
     // Configurar projeção ortográfica para coordenadas de tela
     glMatrixMode(GL_PROJECTION);
@@ -768,8 +845,9 @@ void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, doub
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     
-    if (depthTestEnabled)
-        glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
     
     glMatrixMode(matrixMode);
 }
@@ -779,7 +857,6 @@ void renderScene(void) {
     // Clear the screen.
     glClearColor (0.0,0.0,0.0,1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
 
     // Configure a câmera com base no valor de camera
     GLfloat eyeX, eyeY, eyeZ;           // Posição da câmera
@@ -821,9 +898,9 @@ void renderScene(void) {
         case 2:
         {
             // Calcule a posição base do braço (ombro)
-            float shoulderX = player.getX() + player.getWidth()/2;
-            float shoulderY = player.getY() + player.getHeight() * 0.3f;
-            float shoulderZ = player.getZ() + player.getDepth()/2 + player.getDepth() * 0.2f;
+            float shoulderX = (player.getX() + player.getWidth()/2) + sin(player.getDirectionAngle() * M_PI / 180.0f) * (player.getBodyWidth()/2);
+            float shoulderY = player.getY() + player.getHeight() * 0.325f;
+            float shoulderZ = (player.getZ() + player.getDepth()/2) + cos(player.getDirectionAngle() * M_PI / 180.0f) * (player.getBodyDepth()/2);
             
             // Comprimento do braço para posicionar a câmera na mão
             float armLength = player.getArmHeight();
@@ -842,34 +919,6 @@ void renderScene(void) {
             centerX = shoulderX + dirX * (armLength + 50.0f);  // Olha além do braço
             centerY = shoulderY + dirY * (armLength + 50.0f);
             centerZ = shoulderZ + dirZ * (armLength + 50.0f);
-
-            // float x = eyeX, y = eyeY, z = eyeZ;
-            // float rotatedX1, rotatedY1, rotatedZ1, rotatedX2, rotatedY2, rotatedZ2;
-            // float angle1 = armAngleXZ * M_PI / 180.0f;
-            // float angle2 = -(armAngleXY + 90) * M_PI / 180.0f;
-
-            // std::cout << "angle1: " << armAngleXZ << " angle2: " << -(armAngleXY + 90) << std::endl;
-
-            // // rotate around the Y axis
-            // rotatedX1 = x * cos(angle1) - z * sin(angle1);
-            // rotatedY1 = y;
-            // rotatedZ1 = x * sin(angle1) + z * cos(angle1);
-
-            // // rotate around the Z axis
-            // rotatedX2 = rotatedX1 * cos(angle2) - rotatedY1 * sin(angle2);
-            // rotatedY2 = rotatedX1 * sin(angle2) + rotatedY1 * cos(angle2);
-            // rotatedZ2 = rotatedZ1;
-
-            // normalizeVector3D(dirX, dirY, dirZ);
-            // std::cout << "dirX: " << dirX << " dirY: " << dirY << " dirZ: " << dirZ << std::endl;
-
-            // float zCamX, zCamY, zCamZ;
-            // crossProduct3D(dirX, dirY, dirZ, rotatedX2 - shoulderX, rotatedY2 - (shoulderY + player.getHeight() * 0.05f), rotatedZ2 - shoulderZ, zCamX, zCamY, zCamZ);
-            // normalizeVector3D(zCamX, zCamY, zCamZ);
-
-            // crossProduct3D(zCamX, zCamY, zCamZ, dirX, dirY, dirZ, upX, upY, upZ);
-
-            // std::cout << "upX: " << upX << " upY: " << upY << " upZ: " << upZ << std::endl;
 
             break;
         }
@@ -905,21 +954,21 @@ void renderScene(void) {
     gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 
     // Draw elements
-    arena.draw();
+    arena.draw(nightMode, textureWall);
 
-    player.draw(camera);
+    player.draw(camera, nightMode);
     if (debug){
         player.drawAxis();
         player.drawCollisonBox();
     }
 
     for (Obstacle obs : obstacles) {
-        obs.draw();
+        obs.draw(textureObstacle);
         if (debug)
             obs.drawAxis();
     }
     for (Enemy enemy : enemies) {
-        enemy.draw(camera);
+        enemy.draw(camera, nightMode);
         if (debug){
             enemy.drawAxis();
             enemy.drawCollisonBox();
@@ -948,11 +997,15 @@ void renderScene(void) {
 void init() {
     glutIgnoreKeyRepeat(true);
     glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_TEXTURE_2D);
-    // glEnable(GL_LIGHTING);
-    // glShadeModel (GL_SMOOTH);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+    glShadeModel (GL_SMOOTH);
+    
+    // Ativar normalização automática de normais
+    glEnable(GL_NORMALIZE);
 
-    // glDepthFunc(GL_LEQUAL);
+    textureWall = LoadTextureRAW("textures/pedregulho.bmp");
+    textureObstacle = LoadTextureRAW("textures/madeira.bmp");
 
     ResetKeyStatus();
     ReadSvg(arenaSVGFilename);
@@ -974,8 +1027,6 @@ void init() {
 
     glMatrixMode(GL_MODELVIEW); // Select the modelview matrix
     glLoadIdentity();
-
-    // glEnable(GL_LIGHT0);
 }
 
 int main(int argc, char** argv) {
@@ -1017,3 +1068,4 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
+

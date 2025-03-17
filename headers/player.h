@@ -18,8 +18,8 @@ public:
     Player(GLfloat x, GLfloat y, GLfloat z, GLfloat r) : Character(x, y, z, r, true) {
         jumpSpeed = ((height * 3) / 1000);
     };
-    void draw(int camera){
-        Character::draw(0.0, 1.0, 0.0, camera);
+    void draw(int camera, bool nightMode){
+        Character::draw(0.0, 1.0, 0.0, camera, nightMode);
     }
 
     void setJumping(bool jumping){

@@ -97,33 +97,9 @@ void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
     glPopMatrix();
 }
 
-void Character::draw(GLfloat R, GLfloat G, GLfloat B, int camera) {
+void Character::draw(GLfloat R, GLfloat G, GLfloat B, int camera, bool nightMode) {
     glPushMatrix();
-        // // Calcule a posição base do braço (ombro)
-        // float shoulderX = (getX() + getWidth()/2) + sin(getDirectionAngle() * M_PI / 180.0f) * (width/2);
-        // float shoulderY = getY() + getHeight() * 0.325f;
-        // float shoulderZ = (getZ() + getDepth()/2) + cos(getDirectionAngle() * M_PI / 180.0f) * (depth/2);
-
-        // // Calcule direção do braço usando os ângulos
-        // float dirX = sin((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
-        // float dirY = sin((getThetaArmXY() + 90) * M_PI / 180.0f);
-        // float dirZ = cos((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
-
-        // // Posição da ponta da arma
-        // float armTipX = shoulderX + dirX * getArmHeight();
-        // float armTipY = shoulderY + dirY * getArmHeight();
-        // float armTipZ = shoulderZ + dirZ * getArmHeight();
-
-        // glPushMatrix();
-        //     glTranslatef(shoulderX, shoulderY, shoulderZ);
-        //     drawSphere(0.5, 1.0, 0.0, 0.0);
-        // glPopMatrix();
-        // glPushMatrix();
-        //     glTranslatef(armTipX, armTipY, armTipZ);
-        //     drawSphere(0.5, 1.0, 1.0, 1.0);
-        // glPopMatrix();
-
-        if (player && camera == 1)
+        if (player && (camera == 1 || camera == 2))
         {
             glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
             glRotatef(directionAngle - 90, 0, 1, 0);
@@ -309,9 +285,9 @@ void Character::rotateXZ(GLfloat angle) {
 
 void Character::shoot(std::list<Shoot> &shoots){
     // Calcule a posição base do braço (ombro)
-    float shoulderX = (getX() + getWidth()/2) + sin(getDirectionAngle() * M_PI / 180.0f) * (width/2);
+    float shoulderX = (getX() + getWidth()/2) + sin(getDirectionAngle() * M_PI / 180.0f) * (getBodyWidth()/2);
     float shoulderY = getY() + getHeight() * 0.325f;
-    float shoulderZ = (getZ() + getDepth()/2) + cos(getDirectionAngle() * M_PI / 180.0f) * (depth/2);
+    float shoulderZ = (getZ() + getDepth()/2) + cos(getDirectionAngle() * M_PI / 180.0f) * (getBodyDepth()/2);
 
     // Calcule direção do braço usando os ângulos
     float dirX = sin((-getThetaArmXZ() + getDirectionAngle()) * M_PI / 180.0f);
@@ -329,6 +305,8 @@ void Character::shoot(std::list<Shoot> &shoots){
 
 void Character::drawCollisonBox() {
     glPushMatrix();
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_LIGHTING);
         // Salvar estados de atributos
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LINE_BIT);
             
@@ -370,6 +348,8 @@ void Character::drawCollisonBox() {
         
         // Restaurar estados de atributos
         glPopAttrib();
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_LIGHTING);
     glPopMatrix();
 }
 

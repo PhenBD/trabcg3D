@@ -63,3 +63,95 @@ void crossProduct3D(float ax, float ay, float az,
     cz = ax * by - ay * bx;
 }
 
+// Função auxiliar para criar um retângulo subdividido com GL_TRIANGLE_STRIP
+void drawRectangle(float x1, float y1, float z1, 
+    float x2, float y2, float z2,
+    float x3, float y3, float z3,
+    float x4, float y4, float z4,
+    float normalX, float normalY, float normalZ,
+    GLuint texture, int repeats) {
+        
+    // Definir a normal da face
+    glNormal3f(normalX, normalY, normalZ);
+
+    float width = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
+    float height = sqrt(pow(x4 - x1, 2) + pow(y4 - y1, 2) + pow(z4 - z1, 2));
+    
+    int divisions = log(width * height) * 4;
+    if (divisions < 1) divisions = 1;
+
+    float stepX1 = (x2 - x1) / divisions;
+    float stepY1 = (y2 - y1) / divisions;
+    float stepZ1 = (z2 - z1) / divisions;
+    
+    float stepX2 = (x4 - x1) / divisions;
+    float stepY2 = (y4 - y1) / divisions;
+    float stepZ2 = (z4 - z1) / divisions;
+
+    // Configurar textura
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    double textureS = repeats; // Fator de repetição da textura
+    float texStep = textureS / divisions;
+
+    glNormal3f(normalX, normalY, normalZ);
+
+    for (int i = 0; i < divisions; i++) {
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int j = divisions; j >= 0; j--) {
+            float x0 = x1 + i * stepX1 + j * stepX2;
+            float y0 = y1 + i * stepY1 + j * stepY2;
+            float z0 = z1 + i * stepZ1 + j * stepZ2;
+
+            float x1_ = x1 + (i + 1) * stepX1 + j * stepX2;
+            float y1_ = y1 + (i + 1) * stepY1 + j * stepY2;
+            float z1_ = z1 + (i + 1) * stepZ1 + j * stepZ2;
+
+            float tx0 = i * texStep;
+            float tx1 = (i + 1) * texStep;
+            float tz = j * texStep;
+
+            glTexCoord2f(tx0, tz);
+            glVertex3f(x0, y0, z0);
+
+            glTexCoord2f(tx1, tz);
+            glVertex3f(x1_, y1_, z1_);
+        }
+        glEnd();
+    }
+
+    // // Desenhar as bordas dos triângulos
+    // glDisable(GL_LIGHTING);  // Desativar iluminação para as linhas
+    // glColor3f(0.0f, 0.0f, 0.0f);  // Cor preta para as linhas
+    // glLineWidth(1.0f);  // Espessura da linha
+
+    // for (int i = 0; i < subdivY; i++) {
+    //     glBegin(GL_LINE_STRIP);
+    //     for (int j = 0; j <= subdivX; j++) {
+    //         float px1 = x1 + j * dx1 + i * dx2;
+    //         float py1 = y1 + j * dy1 + i * dy2;
+    //         float pz1 = z1 + j * dz1 + i * dz2;
+            
+    //         float px2 = x1 + j * dx1 + (i + 1) * dx2;
+    //         float py2 = y1 + j * dy1 + (i + 1) * dy2;
+    //         float pz2 = z1 + j * dz1 + (i + 1) * dz2;
+
+    //         glVertex3f(px1, py1, pz1);
+    //         glVertex3f(px2, py2, pz2);
+    //     }
+    //     glEnd();
+    // }
+
+    // // Desenhar as linhas horizontais para completar os triângulos
+    // for (int j = 0; j <= subdivX; j++) {
+    //     glBegin(GL_LINE_STRIP);
+    //     for (int i = 0; i <= subdivY; i++) {
+    //         float px = x1 + j * dx1 + i * dx2;
+    //         float py = y1 + j * dy1 + i * dy2;
+    //         float pz = z1 + j * dz1 + i * dz2;
+    //         glVertex3f(px, py, pz);
+    //     }
+    //     glEnd();
+    // }
+}
+

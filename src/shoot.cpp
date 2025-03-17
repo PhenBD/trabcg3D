@@ -24,13 +24,13 @@ void Shoot::draw()
 
 void Shoot::move(GLdouble timeDiff)
 {
-    double mx = roundToDecimalPlaces(timeDiff * speed * dirX, 5);
-    double my = roundToDecimalPlaces(timeDiff * speed * dirY, 5);
-    double mz = roundToDecimalPlaces(timeDiff * speed * dirZ, 5);
+    // double mx = roundToDecimalPlaces(timeDiff * speed * dirX, 5);
+    // double my = roundToDecimalPlaces(timeDiff * speed * dirY, 5);
+    // double mz = roundToDecimalPlaces(timeDiff * speed * dirZ, 5);
 
-    setX(getX() + mx);
-    setY(getY() + my);
-    setZ(getZ() + mz);
+    // setX(getX() + mx);
+    // setY(getY() + my);
+    // setZ(getZ() + mz);
 }
 
 bool Shoot::checkCollisionCharacter(Character& character)

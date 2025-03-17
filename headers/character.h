@@ -51,7 +51,7 @@ public:
         this->depth = 2 * cylinderRadius;
         this->front = z + this->depth;
     };
-    void draw(GLfloat R, GLfloat G, GLfloat B, int camera);
+    void draw(GLfloat R, GLfloat G, GLfloat B, int camera, bool nightMode);
     void moveX(GLfloat dx, GLdouble timeDiff);
     void moveY(GLfloat dy, GLdouble timeDiff);
     void moveZ(GLfloat dz, GLdouble timeDiff);
@@ -107,6 +107,12 @@ public:
     };
     float getCylinderRadius(){
         return cylinderRadius;
+    };
+    float getBodyWidth(){
+        return bodyWidth;
+    };
+    float getBodyDepth(){
+        return bodyDepth;
     };
 };
 
