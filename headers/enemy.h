@@ -18,8 +18,8 @@ private:
 public:
     Enemy(){}; // Default constructor
     Enemy(GLfloat x, GLfloat y, GLfloat z, GLfloat r) : Character(x, y, z, r, false) {};
-    void draw(int camera, bool nightMode){
-        Character::draw(1.0, 0.5, 0.0, camera, nightMode);
+    void draw(int camera, bool nightMode, GLuint textureArm, GLuint textureBody, GLuint textureLegs, GLuint textureHead){
+        Character::draw(1.0, 0.5, 0.0, camera, nightMode, textureArm, textureBody, textureLegs, textureHead);
     }
     bool operator==(const Enemy& other) const {
         return this->x == other.x && this->y == other.y;

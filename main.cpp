@@ -66,6 +66,11 @@ const GLint Height = 500;
 // Textures
 GLuint textureWall;
 GLuint textureObstacle;
+GLuint textureCamuflage;
+GLuint textureMetal;
+GLuint textureJeans;
+GLuint textureStars;
+GLuint textureSun;
 
 //Components of the virtual world being modeled
 Arena arena;
@@ -953,10 +958,53 @@ void renderScene(void) {
     glLoadIdentity();
     gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 
+    // Configurar a lanterna no modo noturno
+    if (nightMode) {
+        // Posição do ombro (base do braço)
+        float shoulderX = (player.getX() + player.getWidth()/2) + sin(player.getDirectionAngle() * M_PI / 180.0f) * (player.getBodyWidth()/2);
+        float shoulderY = player.getY() + player.getHeight() * 0.325f;
+        float shoulderZ = (player.getZ() + player.getDepth()/2) + cos(player.getDirectionAngle() * M_PI / 180.0f) * (player.getBodyDepth()/2);
+
+        // Direção do braço
+        float dirX = sin((armAngleXZ + player.getDirectionAngle()) * M_PI / 180.0f);
+        float dirY = sin((armAngleXY + 90) * M_PI / 180.0f);
+        float dirZ = cos((armAngleXZ + player.getDirectionAngle()) * M_PI / 180.0f);
+
+        // Posição da lanterna (próxima à mão)
+        float armLength = player.getArmHeight() * 0.9f; // Ajuste para estar perto da mão
+        float flashlightX = shoulderX + dirX * armLength;
+        float flashlightY = shoulderY + dirY * armLength;
+        float flashlightZ = shoulderZ + dirZ * armLength;
+
+        // Configurar luz spotlight
+        GLfloat light_position[] = {flashlightX, flashlightY, flashlightZ, 1.0f}; // Posição da luz
+        GLfloat light_direction[] = {dirX, dirY, dirZ}; // Direção da luz
+        GLfloat light_ambient[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Luz ambiente fraca
+        GLfloat light_diffuse[] = {2.0f, 2.0f, 1.9f, 1.0f}; // Luz difusa (levemente amarelada)
+        GLfloat light_specular[] = {1.0f, 1.0f, 1.0f, 1.0f}; // Luz especular
+
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+        glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_direction);
+        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+
+        // Configurar propriedades de spotlight
+        glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 40.0f); // Ângulo de corte (cone de luz estreito)
+        glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 30.0f); // Foco da luz (quanto maior, mais concentrado)
+        glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f); // Atenuação constante
+        glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.05f); // Atenuação linear
+        glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.01f); // Atenuação quadrática
+
+        glEnable(GL_LIGHT0); // Ativar a lanterna
+    } else {
+        glDisable(GL_LIGHT0); // Desativar a lanterna fora do modo noturno
+    }
+
     // Draw elements
     arena.draw(nightMode, textureWall);
 
-    player.draw(camera, nightMode);
+    player.draw(camera, nightMode, textureCamuflage, textureCamuflage, textureJeans, textureStars);
     if (debug){
         player.drawAxis();
         player.drawCollisonBox();
@@ -968,14 +1016,14 @@ void renderScene(void) {
             obs.drawAxis();
     }
     for (Enemy enemy : enemies) {
-        enemy.draw(camera, nightMode);
+        enemy.draw(camera, nightMode, textureCamuflage, textureCamuflage, textureJeans, textureSun);
         if (debug){
             enemy.drawAxis();
             enemy.drawCollisonBox();
         }
     }
     for (Shoot shoot : shoots) {
-        shoot.draw();
+        shoot.draw(textureMetal);
         if (debug)
             shoot.drawAxis();
     }
@@ -1006,6 +1054,11 @@ void init() {
 
     textureWall = LoadTextureRAW("textures/pedregulho.bmp");
     textureObstacle = LoadTextureRAW("textures/madeira.bmp");
+    textureCamuflage = LoadTextureRAW("textures/camuflagem.bmp");
+    textureJeans = LoadTextureRAW("textures/tecido.bmp");
+    textureMetal = LoadTextureRAW("textures/metal.bmp");
+    textureStars = LoadTextureRAW("textures/stars.bmp");
+    textureSun = LoadTextureRAW("textures/sun.bmp");
 
     ResetKeyStatus();
     ReadSvg(arenaSVGFilename);

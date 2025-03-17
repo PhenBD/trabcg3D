@@ -31,7 +31,7 @@ public:
         this->isPlayerShoot = isPlayerShoot;
     };
 
-    void draw();
+    void draw(GLuint texture);
     void move(GLdouble timeDiff);
     bool checkCollisionCharacter(Character& character);
     bool checkCollisionPlayer(Player& player);

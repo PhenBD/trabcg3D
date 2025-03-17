@@ -155,3 +155,84 @@ void drawRectangle(float x1, float y1, float z1,
     // }
 }
 
+SPHERE * CreateSphere (double R, double space) 
+{
+    SPHERE *sphere = new SPHERE;
+    
+    sphere->numVtx = (180 / space) * 
+                  (2 + 360 / (2*space)) * 4;
+    sphere->vtx = new VERTICES[ sphere->numVtx ];
+    sphere->radius = R;
+
+    int n;
+    double vR, lVR;
+    double hR, lHR;
+    double norm;
+    n = 0;
+    for( vR = 0; vR <= 180-space; vR+=space){
+        for(hR = 0; hR <= 360+2*space; hR+=2*space)
+        {
+            lVR = vR;
+            lHR = hR;
+            sphere->vtx[n].X = R * 
+                    sin(lHR / 180 * M_PI) * 
+                    sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Y = R * 
+                    cos(lHR / 180 * M_PI) * 
+                    sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Z = R * 
+                    cos(lVR / 180 * M_PI);
+            sphere->vtx[n].V = lVR / 180;
+            sphere->vtx[n].U = lHR / 360;
+            norm = sqrt(
+                    sphere->vtx[n].X*sphere->vtx[n].X+
+                    sphere->vtx[n].Y*sphere->vtx[n].Y+
+                    sphere->vtx[n].Z*sphere->vtx[n].Z);
+            sphere->vtx[n].nX = sphere->vtx[n].X/norm;
+            sphere->vtx[n].nY = sphere->vtx[n].Y/norm;
+            sphere->vtx[n].nZ = sphere->vtx[n].Z/norm;
+            n++;
+
+            lVR = vR + space;
+            lHR = hR;
+            sphere->vtx[n].X = R * sin(lHR / 180 * M_PI) * sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Y = R * cos(lHR / 180 * M_PI) * sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Z = R * cos(lVR / 180 * M_PI);
+            sphere->vtx[n].V = lVR / 180;
+            sphere->vtx[n].U = lHR / 360;
+            norm = sqrt(sphere->vtx[n].X*sphere->vtx[n].X+sphere->vtx[n].Y*sphere->vtx[n].Y+sphere->vtx[n].Z*sphere->vtx[n].Z);
+            sphere->vtx[n].nX = sphere->vtx[n].X/norm;
+            sphere->vtx[n].nY = sphere->vtx[n].Y/norm;
+            sphere->vtx[n].nZ = sphere->vtx[n].Z/norm;
+            n++;
+
+            lVR = vR;
+            lHR = hR + space;
+            sphere->vtx[n].X = R * sin(lHR / 180 * M_PI) * sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Y = R * cos(lHR / 180 * M_PI) * sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Z = R * cos(lVR / 180 * M_PI);
+            sphere->vtx[n].V = lVR / 180;
+            sphere->vtx[n].U = lHR / 360;
+            norm = sqrt(sphere->vtx[n].X*sphere->vtx[n].X+sphere->vtx[n].Y*sphere->vtx[n].Y+sphere->vtx[n].Z*sphere->vtx[n].Z);
+            sphere->vtx[n].nX = sphere->vtx[n].X/norm;
+            sphere->vtx[n].nY = sphere->vtx[n].Y/norm;
+            sphere->vtx[n].nZ = sphere->vtx[n].Z/norm;
+            n++;
+
+            lVR = vR + space;
+            lHR = hR + space;
+            sphere->vtx[n].X = R * sin(lHR / 180 * M_PI) * sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Y = R * cos(lHR / 180 * M_PI) * sin(lVR / 180 * M_PI);
+            sphere->vtx[n].Z = R * cos(lVR / 180 * M_PI);
+            sphere->vtx[n].V = lVR / 180;
+            sphere->vtx[n].U = lHR / 360;
+            norm = sqrt(sphere->vtx[n].X*sphere->vtx[n].X+sphere->vtx[n].Y*sphere->vtx[n].Y+sphere->vtx[n].Z*sphere->vtx[n].Z);
+            sphere->vtx[n].nX = sphere->vtx[n].X/norm;
+            sphere->vtx[n].nY = sphere->vtx[n].Y/norm;
+            sphere->vtx[n].nZ = sphere->vtx[n].Z/norm;
+            n++;
+        }
+    }
+    return sphere;
+}
+

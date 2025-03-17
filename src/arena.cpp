@@ -48,37 +48,37 @@ void Arena::draw(bool nightMode, GLuint texture) {
             GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
             
             // Configurar propriedades da luz
-            glLightfv(GL_LIGHT0 + i, GL_POSITION, center_position);
-            glLightfv(GL_LIGHT0 + i, GL_AMBIENT, light_ambient);
-            glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, light_diffuse);
-            glLightfv(GL_LIGHT0 + i, GL_SPECULAR, light_specular);
+            glLightfv(GL_LIGHT1 + i, GL_POSITION, center_position);
+            glLightfv(GL_LIGHT1 + i, GL_AMBIENT, light_ambient);
+            glLightfv(GL_LIGHT1 + i, GL_DIFFUSE, light_diffuse);
+            glLightfv(GL_LIGHT1 + i, GL_SPECULAR, light_specular);
 
             // Configurar atenuação para simular decaimento realista da luz
-            glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.3f);   // Menor valor = luz mais forte
-            glLightf(GL_LIGHT0 + i, GL_LINEAR_ATTENUATION, 0.002f);   // Decaimento com distância
-            glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, 0.0005f); // Decaimento quadrático
+            glLightf(GL_LIGHT1 + i, GL_CONSTANT_ATTENUATION, 0.3f);   // Menor valor = luz mais forte
+            glLightf(GL_LIGHT1 + i, GL_LINEAR_ATTENUATION, 0.002f);   // Decaimento com distância
+            glLightf(GL_LIGHT1 + i, GL_QUADRATIC_ATTENUATION, 0.0005f); // Decaimento quadrático
 
             // Ativar a luz
-            glEnable(GL_LIGHT0 + i);
+            glEnable(GL_LIGHT1 + i);
             
-            // Desenhar uma pequena esfera para representar visualmente a luz
-            glPushMatrix();
-                glDisable(GL_LIGHTING);  // Desabilitar iluminação para a esfera da luz
-                glTranslatef(center_position[0], center_position[1], center_position[2]);
-                glColor3f(light_diffuse[0], light_diffuse[1], light_diffuse[2]);
+            // // Desenhar uma pequena esfera para representar visualmente a luz
+            // glPushMatrix();
+            //     glDisable(GL_LIGHTING);  // Desabilitar iluminação para a esfera da luz
+            //     glTranslatef(center_position[0], center_position[1], center_position[2]);
+            //     glColor3f(light_diffuse[0], light_diffuse[1], light_diffuse[2]);
                 
-                GLUquadricObj *sphere = gluNewQuadric();
-                gluQuadricNormals(sphere, GLU_SMOOTH);
-                gluSphere(sphere, 1.0f, 10, 10);  // Esfera pequena
-                gluDeleteQuadric(sphere);
+            //     GLUquadricObj *sphere = gluNewQuadric();
+            //     gluQuadricNormals(sphere, GLU_SMOOTH);
+            //     gluSphere(sphere, 1.0f, 10, 10);  // Esfera pequena
+            //     gluDeleteQuadric(sphere);
                 
-                glEnable(GL_LIGHTING);  // Reabilitar iluminação
-            glPopMatrix();
+            //     glEnable(GL_LIGHTING);  // Reabilitar iluminação
+            // glPopMatrix();
         }
     } else {
         // No modo noturno, desativar todas as luzes da arena
         for (int i = 0; i < 5; i++) {
-            glDisable(GL_LIGHT0 + i);
+            glDisable(GL_LIGHT1 + i);
         }
     }
 

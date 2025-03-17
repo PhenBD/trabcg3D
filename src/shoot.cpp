@@ -1,7 +1,7 @@
 #include "../headers/shoot.h"
-#include "../headers/character.h" // Adicione esta linha!
-#include "../headers/player.h"    // Para os métodos específicos
-#include "../headers/enemy.h"     // Para os métodos específicos
+#include "../headers/character.h"
+#include "../headers/player.h"
+#include "../headers/enemy.h"
 
 void Shoot::drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
 {
@@ -14,23 +14,46 @@ void Shoot::drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
     glPopMatrix();
 }
 
-void Shoot::draw()
+void Shoot::draw(GLuint texture)
 {
     glPushMatrix();
         glTranslatef(x, y, z);
-        drawSphere(radius, 1.0, 0.7, 0.5);
+        SPHERE *shoot = CreateSphere(radius, 10);
+
+        GLfloat materialEmission[] = { 0.10, 0.10, 0.10, 1};
+        GLfloat materialColorA[] = { 0.2, 0.2, 0.2, 1};
+        GLfloat materialColorD[] = { 1.0, 1.0, 1.0, 1};
+        GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1};
+        GLfloat mat_shininess[] = { 100.0 };
+        glColor3f(1,1,1);
+     
+        glMaterialfv(GL_FRONT, GL_EMISSION, materialEmission);
+        glMaterialfv(GL_FRONT, GL_AMBIENT, materialColorA);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, materialColorD);
+        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    
+        glBindTexture (GL_TEXTURE_2D, texture);
+        glBegin (GL_TRIANGLE_STRIP);
+        for ( int i = 0; i <shoot->numVtx; i++)
+        {
+            glNormal3f(shoot->vtx[i].nX, shoot->vtx[i].nY, shoot->vtx[i].nZ);
+            glTexCoord2f (shoot->vtx[i].U, shoot->vtx[i].V);
+            glVertex3f (shoot->vtx[i].X, shoot->vtx[i].Y, shoot->vtx[i].Z);
+        }
+        glEnd();
     glPopMatrix();
 }
 
 void Shoot::move(GLdouble timeDiff)
 {
-    // double mx = roundToDecimalPlaces(timeDiff * speed * dirX, 5);
-    // double my = roundToDecimalPlaces(timeDiff * speed * dirY, 5);
-    // double mz = roundToDecimalPlaces(timeDiff * speed * dirZ, 5);
+    double mx = roundToDecimalPlaces(timeDiff * speed * dirX, 5);
+    double my = roundToDecimalPlaces(timeDiff * speed * dirY, 5);
+    double mz = roundToDecimalPlaces(timeDiff * speed * dirZ, 5);
 
-    // setX(getX() + mx);
-    // setY(getY() + my);
-    // setZ(getZ() + mz);
+    setX(getX() + mx);
+    setY(getY() + my);
+    setZ(getZ() + mz);
 }
 
 bool Shoot::checkCollisionCharacter(Character& character)

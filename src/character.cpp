@@ -1,120 +1,248 @@
 #include "../headers/character.h"
 
-void Character::drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B)
+void Character::drawBody(GLuint texture)
 {
     glPushMatrix();
-        glColor3f(R, G, B);
-        
+        GLfloat materialEmission[] = { 0.0, 0.0, 0.0, 1};
+        GLfloat materialColorA[] = { 0.0, 0.0, 0.0, 1};
+        GLfloat materialColorD[] = { 1.0, 1.0, 1.0, 1};
+        GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1};
+        GLfloat mat_shininess[] = { 100.0 };
+        glColor3f(1,1,1);
+    
+        glMaterialfv(GL_FRONT, GL_EMISSION, materialEmission);
+        glMaterialfv(GL_FRONT, GL_AMBIENT, materialColorA);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, materialColorD);
+        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+        GLfloat BodyHeight = 0.3 * height;
+        GLfloat BodyWidth = bodyWidth;
+        GLfloat BodyDepth = bodyDepth;
+
         // Face frontal
-        glBegin(GL_QUADS);
-            glVertex3f(-width/2, 0, depth/2);
-            glVertex3f(width/2, 0, depth/2);
-            glVertex3f(width/2, height, depth/2);
-            glVertex3f(-width/2, height, depth/2);
-        glEnd();
-        
+        drawRectangle(-BodyWidth/2, 0, BodyDepth/2,           
+                    BodyWidth/2, 0, BodyDepth/2,            
+                    BodyWidth/2, BodyHeight, BodyDepth/2,       
+                    -BodyWidth/2, BodyHeight, BodyDepth/2,      
+                    0.0f, 0.0f, 1.0f,              
+                    texture, 1);
+
         // Face traseira
-        glBegin(GL_QUADS);
-            glVertex3f(-width/2, 0, -depth/2);
-            glVertex3f(width/2, 0, -depth/2);
-            glVertex3f(width/2, height, -depth/2);
-            glVertex3f(-width/2, height, -depth/2);
-        glEnd();
-        
+        drawRectangle(-BodyWidth/2, 0, -BodyDepth/2,          
+                    BodyWidth/2, 0, -BodyDepth/2,           
+                    BodyWidth/2, BodyHeight, -BodyDepth/2,      
+                    -BodyWidth/2, BodyHeight, -BodyDepth/2,     
+                    0.0f, 0.0f, -1.0f,             
+                    texture, 1);
+
         // Face superior
-        glBegin(GL_QUADS);
-            glVertex3f(-width/2, height, depth/2);
-            glVertex3f(width/2, height, depth/2);
-            glVertex3f(width/2, height, -depth/2);
-            glVertex3f(-width/2, height, -depth/2);
-        glEnd();
-        
+        drawRectangle(-BodyWidth/2, BodyHeight, BodyDepth/2,      
+                    BodyWidth/2, BodyHeight, BodyDepth/2,       
+                    BodyWidth/2, BodyHeight, -BodyDepth/2,      
+                    -BodyWidth/2, BodyHeight, -BodyDepth/2,     
+                    0.0f, 1.0f, 0.0f,              
+                    texture, 1);
+
         // Face inferior
-        glBegin(GL_QUADS);
-            glVertex3f(-width/2, 0, depth/2);
-            glVertex3f(width/2, 0, depth/2);
-            glVertex3f(width/2, 0, -depth/2);
-            glVertex3f(-width/2, 0, -depth/2);
-        glEnd();
-        
+        drawRectangle(-BodyWidth/2, 0, BodyDepth/2,           
+                    BodyWidth/2, 0, BodyDepth/2,            
+                    BodyWidth/2, 0, -BodyDepth/2,           
+                    -BodyWidth/2, 0, -BodyDepth/2,          
+                    0.0f, -1.0f, 0.0f,             
+                    texture, 1);
+
         // Face lateral esquerda
-        glBegin(GL_QUADS);
-            glVertex3f(-width/2, 0, depth/2);
-            glVertex3f(-width/2, height, depth/2);
-            glVertex3f(-width/2, height, -depth/2);
-            glVertex3f(-width/2, 0, -depth/2);
-        glEnd();
-        
+        drawRectangle(-BodyWidth/2, 0, BodyDepth/2,           
+                    -BodyWidth/2, BodyHeight, BodyDepth/2,      
+                    -BodyWidth/2, BodyHeight, -BodyDepth/2,     
+                    -BodyWidth/2, 0, -BodyDepth/2,          
+                    -1.0f, 0.0f, 0.0f,             
+                    texture, 1);
+
         // Face lateral direita
-        glBegin(GL_QUADS);
-            glVertex3f(width/2, 0, depth/2);
-            glVertex3f(width/2, height, depth/2);
-            glVertex3f(width/2, height, -depth/2);
-            glVertex3f(width/2, 0, -depth/2);
-        glEnd();
+        drawRectangle(BodyWidth/2, 0, BodyDepth/2,            
+                    BodyWidth/2, BodyHeight, BodyDepth/2,       
+                    BodyWidth/2, BodyHeight, -BodyDepth/2,      
+                    BodyWidth/2, 0, -BodyDepth/2,           
+                    1.0f, 0.0f, 0.0f,              
+                    texture, 1);
     glPopMatrix();
 }
 
-void Character::drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
+void Character::drawHead(GLfloat radius, GLuint texture)
 {
     glPushMatrix();
-        glColor3f(R, G, B);
+        SPHERE *head = CreateSphere(radius, 10);
 
-        GLUquadricObj *sphere = gluNewQuadric();
-        gluQuadricDrawStyle(sphere, GLU_FILL);
-        gluSphere(sphere, radius, 20, 20);  // radius, slices, stacks
-        gluDeleteQuadric(sphere);
+        glBindTexture (GL_TEXTURE_2D, texture);
+        glBegin (GL_TRIANGLE_STRIP);
+        for ( int i = 0; i <head->numVtx; i++)
+        {
+            glNormal3f(head->vtx[i].nX, head->vtx[i].nY, head->vtx[i].nZ);
+            glTexCoord2f (head->vtx[i].U, head->vtx[i].V);
+            glVertex3f (head->vtx[i].X, head->vtx[i].Y, head->vtx[i].Z);
+        }
+        glEnd();
     glPopMatrix();
 }
 
-void Character::drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ)
+void Character::drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ, GLuint texture)
 {
     glPushMatrix();
         glTranslatef(x, y, z);
         glRotatef(thetaXY, 0, 0, 1);
         glRotatef(thetaXZ, 1, 0, 0);
-        drawRect(armHeight, height * 0.05, bodyDepth * 0.2, 1.0, 1.0, 0.0);
+        // drawRect(armHeight, height * 0.05, bodyDepth * 0.2, 1.0, 1.0, 0.0);
+
+        GLfloat armHeight = 0.2 * height;
+        GLfloat armWidth = height * 0.05;
+        GLfloat armDepth = depth * 0.2;
+
+        // Face frontal
+        drawRectangle(-armWidth/2, 0, armDepth/2,           
+                    armWidth/2, 0, armDepth/2,            
+                    armWidth/2, armHeight, armDepth/2,       
+                    -armWidth/2, armHeight, armDepth/2,      
+                    0.0f, 0.0f, 1.0f,              
+                    texture, 1);
+
+        // Face traseira
+        drawRectangle(-armWidth/2, 0, -armDepth/2,          
+                    armWidth/2, 0, -armDepth/2,           
+                    armWidth/2, armHeight, -armDepth/2,      
+                    -armWidth/2, armHeight, -armDepth/2,     
+                    0.0f, 0.0f, -1.0f,             
+                    texture, 1);
+
+        // Face superior
+        drawRectangle(-armWidth/2, armHeight, armDepth/2,      
+                    armWidth/2, armHeight, armDepth/2,       
+                    armWidth/2, armHeight, -armDepth/2,      
+                    -armWidth/2, armHeight, -armDepth/2,     
+                    0.0f, 1.0f, 0.0f,              
+                    texture, 1);
+
+        // Face inferior
+        drawRectangle(-armWidth/2, 0, armDepth/2,           
+                    armWidth/2, 0, armDepth/2,            
+                    armWidth/2, 0, -armDepth/2,           
+                    -armWidth/2, 0, -armDepth/2,          
+                    0.0f, -1.0f, 0.0f,             
+                    texture, 1);
+
+        // Face lateral esquerda
+        drawRectangle(-armWidth/2, 0, armDepth/2,           
+                    -armWidth/2, armHeight, armDepth/2,      
+                    -armWidth/2, armHeight, -armDepth/2,     
+                    -armWidth/2, 0, -armDepth/2,          
+                    -1.0f, 0.0f, 0.0f,             
+                    texture, 1);
+
+        // Face lateral direita
+        drawRectangle(armWidth/2, 0, armDepth/2,            
+                    armWidth/2, armHeight, armDepth/2,       
+                    armWidth/2, armHeight, -armDepth/2,      
+                    armWidth/2, 0, -armDepth/2,           
+                    1.0f, 0.0f, 0.0f,              
+                    texture, 1);
     glPopMatrix();
 }
 
-void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z){
+void Character::drawLegPart(GLuint texture){
+    glPushMatrix();
+        GLfloat legPartHeight = height * 0.2;
+        GLfloat legPartWidth = height * 0.05;
+        GLfloat LegPartDepth = bodyDepth * 0.2;
+
+        // Face frontal
+        drawRectangle(-legPartWidth/2, 0, LegPartDepth/2,           
+                    legPartWidth/2, 0, LegPartDepth/2,            
+                    legPartWidth/2, legPartHeight, LegPartDepth/2,       
+                    -legPartWidth/2, legPartHeight, LegPartDepth/2,      
+                    0.0f, 0.0f, 1.0f,              
+                    texture, 1);
+
+        // Face traseira
+        drawRectangle(-legPartWidth/2, 0, -LegPartDepth/2,          
+                    legPartWidth/2, 0, -LegPartDepth/2,           
+                    legPartWidth/2, legPartHeight, -LegPartDepth/2,      
+                    -legPartWidth/2, legPartHeight, -LegPartDepth/2,     
+                    0.0f, 0.0f, -1.0f,             
+                    texture, 1);
+
+        // Face superior
+        drawRectangle(-legPartWidth/2, legPartHeight, LegPartDepth/2,      
+                    legPartWidth/2, legPartHeight, LegPartDepth/2,       
+                    legPartWidth/2, legPartHeight, -LegPartDepth/2,      
+                    -legPartWidth/2, legPartHeight, -LegPartDepth/2,     
+                    0.0f, 1.0f, 0.0f,              
+                    texture, 1);
+
+        // Face inferior
+        drawRectangle(-legPartWidth/2, 0, LegPartDepth/2,           
+                    legPartWidth/2, 0, LegPartDepth/2,            
+                    legPartWidth/2, 0, -LegPartDepth/2,           
+                    -legPartWidth/2, 0, -LegPartDepth/2,          
+                    0.0f, -1.0f, 0.0f,             
+                    texture, 1);
+
+        // Face lateral esquerda
+        drawRectangle(-legPartWidth/2, 0, LegPartDepth/2,           
+                    -legPartWidth/2, legPartHeight, LegPartDepth/2,      
+                    -legPartWidth/2, legPartHeight, -LegPartDepth/2,     
+                    -legPartWidth/2, 0, -LegPartDepth/2,          
+                    -1.0f, 0.0f, 0.0f,             
+                    texture, 1);
+
+        // Face lateral direita
+        drawRectangle(legPartWidth/2, 0, LegPartDepth/2,            
+                    legPartWidth/2, legPartHeight, LegPartDepth/2,       
+                    legPartWidth/2, legPartHeight, -LegPartDepth/2,      
+                    legPartWidth/2, 0, -LegPartDepth/2,           
+                    1.0f, 0.0f, 0.0f,              
+                    texture, 1);
+    glPopMatrix();
+}
+
+void Character::drawLegs(GLfloat x, GLfloat y, GLfloat z, GLuint texture){
     glPushMatrix();
         glTranslatef(x, y, z + bodyDepth * 0.3);
         glRotatef(thetaLeft1, 0, 0, 1);
-        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawLegPart(texture);
         glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaLeft2, 0, 0, 1);
-        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawLegPart(texture);
     glPopMatrix();
 
     glPushMatrix();
         glTranslatef(x, y, z - bodyDepth * 0.3);
         glRotatef(thetaRight1, 0, 0, 1);
-        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawLegPart(texture);
         glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaRight2, 0, 0, 1);
-        drawRect(height * 0.2, height * 0.05, bodyDepth * 0.2, 1.0, 0.0, 0.0);
+        drawLegPart(texture);
     glPopMatrix();
 }
 
-void Character::draw(GLfloat R, GLfloat G, GLfloat B, int camera, bool nightMode) {
+void Character::draw(GLfloat R, GLfloat G, GLfloat B, int camera, bool nightMode, GLuint textureArm, GLuint textureBody, GLuint textureLegs, GLuint textureHead) {
     glPushMatrix();
         if (player && (camera == 1 || camera == 2))
         {
             glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
             glRotatef(directionAngle - 90, 0, 1, 0);
             glTranslatef(0, (0.15 * height), 0);
-            drawArm(bodyWidth/2, height * 0.025, 0, thetaArmXY, thetaArmXZ);
+            drawArm(bodyWidth/2, height * 0.025, 0, thetaArmXY, thetaArmXZ, textureArm);
         }
         else
         {
             glTranslatef(x + (width/2), y + (0.15 * height), z + (depth/2));
             glRotatef(directionAngle - 90, 0, 1, 0);
-            drawSphere((0.15 * height), R, G, B);
+            drawHead((0.15 * height), textureHead);
             glTranslatef(0, (0.15 * height), 0);
-            drawRect(0.3 * height, bodyWidth, bodyDepth, R, G, B);
-            drawArm(bodyWidth/2, height * 0.025, 0, thetaArmXY, thetaArmXZ);
-            drawLegs(0, 0.3 * height, 0);
+            drawBody(textureBody);
+            drawArm(bodyWidth/2, height * 0.025, 0, thetaArmXY, thetaArmXZ, textureArm);
+            drawLegs(0, 0.3 * height, 0, textureLegs);
         }
     glPopMatrix();
 }
@@ -305,10 +433,9 @@ void Character::shoot(std::list<Shoot> &shoots){
 
 void Character::drawCollisonBox() {
     glPushMatrix();
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_LIGHTING);
-        // Salvar estados de atributos
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LINE_BIT);
+        glPushAttrib(GL_ENABLE_BIT);
+            glDisable(GL_LIGHTING);
+            glDisable(GL_TEXTURE_2D);
             
             // Mover para o centro do personagem
             // O cilindro deve estar centrado no plano XZ

@@ -6,6 +6,7 @@
 #include "obstacle.h"
 #include "arena.h"
 #include "shoot.h"
+#include "utils.h"
 #include <list>
 #include <cmath>
 
@@ -34,10 +35,11 @@ private:
     float cylinderRadius;
     float bodyWidth, bodyDepth;
 
-    void drawRect(GLfloat height, GLfloat width, GLfloat depth, GLfloat R, GLfloat G, GLfloat B);
-    void drawSphere(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
-    void drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ);
-    void drawLegs(GLfloat x, GLfloat y, GLfloat z);
+    void drawBody(GLuint texture);
+    void drawHead(GLfloat radius, GLuint texture);
+    void drawArm(GLfloat x, GLfloat y, GLfloat z, GLfloat thetaXY, GLfloat thetaXZ, GLuint texture);
+    void drawLegs(GLfloat x, GLfloat y, GLfloat z, GLuint texture);
+    void drawLegPart(GLuint texture);
 
 public:
     Character(){}; // Default constructor
@@ -51,7 +53,7 @@ public:
         this->depth = 2 * cylinderRadius;
         this->front = z + this->depth;
     };
-    void draw(GLfloat R, GLfloat G, GLfloat B, int camera, bool nightMode);
+    void draw(GLfloat R, GLfloat G, GLfloat B, int camera, bool nightMode, GLuint textureArm, GLuint textureBody, GLuint textureLegs, GLuint textureHead);
     void moveX(GLfloat dx, GLdouble timeDiff);
     void moveY(GLfloat dy, GLdouble timeDiff);
     void moveZ(GLfloat dz, GLdouble timeDiff);
